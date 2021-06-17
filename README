@@ -1,0 +1,254 @@
+The Bhat Program
+----------------
+
+What it is?
+
+Bhat is a general purpose likelihood function (posterior distribution)
+exploration tool. It compiles as a f90/hpf static library that links
+to the user supplied subroutine for the computation of the object
+function of interest (called FUNC).  Bhat can be used to minimize,
+maximize, and to sample multivariate functions and distributions.
+Bhat will in general try to compute a global minimum (maximum), but
+can get stuck in local extrema, or even stop on inflection (saddle)
+points. Next to gradient search algorithms that shoot for extrema
+(say, the modes of a probability density), it can also use MCMC-based
+strategies to further explore target distributions. It now has a
+module that allows for the incorporation of heterogeneous parameters
+in MCMC type calculations.
+ 
+
+How to set up the subroutine FUNC?
+
+A few instructions to set up the subroutine FUNC which is called
+from Bhat. The subroutine FUNC first loads relevant data, initializes
+constants and other processes, and finally computes the score that is
+to be minimized. 
+
+Usage:
+
+The name of the subroutine has to be 'FUNC', i.e. you need to invoke
+
+        subroutine FUNC(u,npar,f)
+
+Here 'npar' is the no. of parameters and 'u' the array of dimension 'npar'
+that holds all the parameter values (even those that are later kept
+constant). 'f' is the function value (score) returned to Bhat to be
+minimized.  'iflag' is a basic flag variable communicated via the common
+block IFLAGS:
+
+      COMMON /IFLAGS/IFLAG,IMCMC,IBOOT,ISEED,IERR
+
+The flag 'iflag' can be used within FUNC to control certain of its
+actions.  On first call to FUNC, Bhat sets 'iflag' to 1.  This can be
+used to read in data and to initialize variables, so it doesn't have
+to be done again in subsequent calls. But remember, in order to keep
+data and variables in memory, even after calling 'FUNC', you must
+either declare the variables as 'static' using for instance the
+Fortran 'save' command, or you need to compile 'FUNC' with the -static
+flag (most compilers now do this by default).  Note, currently only
+the F90/HPF version of Bhat is under development. Bhat should compile
+OK with most f90 compilers, although 'system' calls may vary from
+compiler to compiler.
+
+On second call to FUNC, 'iflag' is set to 2 and this can be used to
+bypass the 'data read-in' part and to directly go to the computation
+of the value 'f'.  The flag 'iflag' can also be set to the value of 3
+by typing 'fit' on the Bhat command line. This, in turn, can be used
+to do some final computation before Bhat exits.
+
+Here is a Fortran example of 'FUNC' (required statements are marked
+by x, optional statements denoted by o in the first column:
+
+          PROGRAM FUNC.F
+        
+x         SUBROUTINE FUNC(U,NPAR,f)
+  
+x         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+c or equivalent precision assignments
+  
+x         DIMENSION U(NPAR)
+  
+          dimension ...
+          common ...
+  
+x         COMMON /IFLAGS/IFLAG,IMCMC,IBOOT,ISEED,IERR
+        ....
+  
+x         IF (IFLAG.EQ.1) THEN
+   
+        ... initialize stuff and read in data etc. .......
+  
+x         IFLAG=2
+x         ENDIF
+  
+        ... compute f
+
+x	  F=...
+ 
+o         IF(IFLAG.EQ.3) THEN
+	  do some final tasks ...
+	  ENDIF
+
+ 
+x         RETURN
+x         END
+
+
+For instance, 'f' could be the negative log-likelihood for some data
+under a specific model.  The subroutine FUNC, after compilation, needs
+to be linked to the library libBhat_hpf.a. A sample makefile to
+achieve that task conveniently is shown below.
+
+Bhat takes the input from a file 'bhat.inp' located in the current
+directory.  The format for the input parameters (label, initial guess
+or assumed value, a run-control flag (R, or S mostly), -, lower and
+upper bounds) is shown in this example:
+
+  A0    0.30629E+00    R 0.00000E+00 0.00000E+00 0.10000E+02
+  A1    0.50568E-01    R 0.00000E+00 0.00000E+00 0.10000E+01
+  A11   0.28725E+00    S 0.00000E+00 0.00000E+00 0.10000E+02
+  A12   0.29641E-01    R 0.00000E+00 0.00000E+00 0.10000E+02
+  GA    0.89619E+00    R 0.00000E+00 0.00000E+00 0.20000E+01
+  AGAM  0.10297E+01    S 0.00000E+00 0.00000E+00 0.10000E+02
+  BGAM  0.56847E+00    R 0.00000E+00 0.00000E+00 0.10000E+02
+END
+
+(Note the END statement at the end). The run-control variable is
+usually set to 'R' for 'running, or to 'S' for 'stopped'. In the
+latter case, the parameter is kept fixed at the value specified in the
+second column. On 'exit' Bhat produces a file, 'bhat.out', that has
+the same format as 'bhat.inp', but contains the last point visited in
+parameter space. You can toggle the run-control variable interactively
+by typing 'fix' or 'rel' (for release) at the prompt, and by typing
+the parameter name when prompted. An empty return will bring you back
+to the Bhat prompt.
+
+
+After starting Bhat you should see a table reflecting the information
+provided by the file bhat.inp. Type 'simplex' or 'grad' to invoke the
+simplex or the DFP search algorithms.  The module 'newton' (a
+Newton-Raphson method) computes the Hessian numerically, using
+symmetric point constellations for computing the second derivatives
+numerically, with all parameters 'logit' transformed. Thus O(N^2)
+calls have to be made for one newton cycle. Note, 'newton' usually
+will not converge unless one is close or in the 'quadratic region' of
+the object function. The recommended sequence for finding a minimum in 'f'
+is 'simplex', 'grad' and 'newton'. Sometimes, the 'simplex' procedure
+can be omitted as it is not very efficient.  Bhat checks the
+eigenvalues of the Hessian (second deriv. matrix) for positive
+definiteness and stability. Eigenvalues near zero either indicate
+extremely strong correlations among parameters, or an identifiability
+problem.
+
+The 3 modules 'simplex', 'grad' and 'newton' are really standalone
+modules. However, experience shows that if one cannot get newton to
+converge, then there is a problem (due to non-identifiability,
+numerical accuracy, bug in program or otherwise). The best way to give
+newton a chance to converge is to first run 'simplex' (or 'global'),
+then 'grad', then 'newton'. Often, however, 'grad' works fine to begin
+without first running 'simplex'.
+
+
+Creating the Bhat library?
+
+On a Linux system, with the Portland Group compiler installed, just
+type 'make'. On any other system the makefile has to be changed
+manually. Bhat_hpf requires either a F90 or (better) a HPF
+compiler. Bhat also makes use of the GNUPLOT package. However, it is
+not required for basic operations. The prefered environment is 'Linux'.
+
+Here is a sample Makefile that will create a binary 'Bhat' that will
+compute various properties of the score 'f':
+
+------------------------------------------------------------------------
+F77=pghpf
+FFLAGS= -O -Minform=warn -Minfo=loop -Mr8 -Mextend -Mstats
+F77OPTIONS=-L/home/g/Bhat_hpf -lBhat_hpf
+# the path -L... has to point to the location where the library libBhat_hpf.a resides.
+
+all: Bhat
+
+Bhat: func.o read_data.o
+	$(F77) $(FFLAGS) -o Bhat func.o read_data.o
+
+func.o: func.hpf
+	$(F77) $(FFLAGS) -c func.hpf
+
+read_data.o: read_data.hpf
+	$(F77) $(FFLAGS) -c read_data.hpf
+------------------------------------------------------------------------
+
+
+How to run Bhat?
+
+Invoke Bhat by the executable name that you define (say in the
+Makefile).  Bhat parses the file 'bhat.inp' and initializes the
+search. You should get the command line prompt: Bhat>
+
+Now you are ready to use Bhat. For a menu of possible commands, type
+'help', i.e.
+
+Bhat> help
+ main menu of commands:
+ ---------------------------------------------------------
+ global :	Runs a Markov-Chain MC search
+ simplex:	Runs a Simplex algorithm
+ grad   :	Runs a Fletcher-Powell-Davidson algorithm
+ newton :	Runs a Newton-Raphson algorithm
+  
+ (recommended sequence: simplex, grad, newton)
+  
+ mcmc   :	Runs a Markov-Chain MC algorithm
+ raneff :	Runs a Markov-Chain MC with random effects
+ ci     :        Compute prof. likelihood CIs of par <lbl>
+ reset  :	Reads input file bhat.inp
+ fix    :	Fixes parameter with label <lbl>
+ rel    :	Releases parameter with label <lbl>
+ log    :        invoke log entry
+  
+ boot   :	Run bootstrap (if sampling implemented)
+ help   :	Gives this menu
+ exit   :	stop Bhat and save parameters in bhat.out
+ ---------------------------------------------------------
+ Yes or NO answer with Y or N
+
+
+Using Newton-Raphson:
+---------------------
+
+Newton now uses a diferent input style: I normally use the setting:
+.01 10 0 on one line.
+
+Confidence bounds, profile likelihood CIs, credibility regions etc:
+-------------------------------------------------------------------
+Upon convergence of NEWTON 95% confidence bounds are reported.  These
+confidence bounds are computed using the observed information matrix
+on the logit scale. Reported are the boundaries that are transformed
+back to the original scale.
+
+Try also the command 'CI' for computing profile likelihood bounds.
+
+
+
+Good luck with Bhat! Please remember, the package is under continuous development.
+
+E. Georg Luebeck, Mon Nov 29 12:54:25 PST 1999
+
+Fred Hutchinson Cancer Research Center
+1100 Fairview Avenue North 
+Box 19024
+Seattle, Washington 98109-1024
+phone:    (206) 667-4282 
+fax:      (206) 667-7004
+
+
+
+
+
+
+
+
+
+
+
+

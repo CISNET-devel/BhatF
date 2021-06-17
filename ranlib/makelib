@@ -1,0 +1,6 @@
+#
+#   This script makes a library (named libranlib.a) out of all ".o
+#	files in the current directory
+#
+lorder *.o | tsort | xargs ar qv libranlib.a
+mv libranlib.a ../libranlib.a

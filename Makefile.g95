@@ -1,0 +1,50 @@
+CC		= gfortran
+CCFLAGS         = -c -ffixed-line-length-132 -O3 -ftree-vectorize -w
+RM1		= rm -f
+PROGRAMS	= Bhat
+
+OBJS1 =  \
+	main.o\
+	hessian.o\
+	newton.o\
+	simplex.o\
+	migrad.o\
+	dqstep.o\
+	mcmc.het-gam2.o\
+	mcmc.het-lnorm2.o\
+	berkson.o\
+	global.o\
+	plkhci.o\
+	ftrafo.o\
+	btrafo.o\
+	ran2.o\
+	randgs.o
+
+all:	$(OBJS1)
+	gfortran -c -w alngam.f90
+	gfortran -c -w -O0 axeb.f
+	gfortran -c -w -O0 rs.f
+	@echo building ranlib
+	@cd ./ranlib; make
+	@echo building archive
+	ar crs libBhat_f95.a $(OBJS1) alngam.o axeb.o rs.o ./ranlib/*.o
+	@echo ranlib libBhat_f95.a
+
+.f.o: ; $(CC) $(CCFLAGS) -c $<
+
+clean:
+	rm -rf *.o
+	rm libBhat_f95.a
+	@cd ./ranlib; rm -rf *.o
+	@cd ./subplx; rm -rf *.o
+
+
+
+
+
+
+
+
+
+
+

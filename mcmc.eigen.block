@@ -1,0 +1,99 @@
+C -----------------------------------------------
+C if n > mct0 block updates
+
+
+	DO II=1,NPAR
+
+        I=JSQ(II)
+	D=DI(I)
+	DH=D/2.d0
+        ACC_P=0.d0
+	
+        EU(I)=EU0(I)-DH+RAN2(ISEED)*D !proposal
+        IF(EU(I).LE.E1(I)) GOTO 14 !these are rejected as prior is zero
+        IF(EU(I).GE.E2(I)) GOTO 14
+
+	ENDDO
+		
+C ---  invert relationship S^{-1}
+
+	DO K=1,NPAR
+	 SU(K)=0.D0
+	 DO L=1,NPAR
+	  SU(K)=SU(K)+EU(L)*S(k,l)
+         ENDDO
+
+C ***  check bounds
+
+c 	IF(SU(K).LE.S1(K)) PRINT*,'proposal <:',k,su(k),s1(k)
+c 	IF(SU(K).GE.S2(K)) PRINT*,'proposal >:',k,su(k),s2(k)
+c 	if(su0(k).ne.tu0(k)) print*,'check:',su0(k),tu0(k)
+
+	ENDDO
+
+
+c --- explicitly checking for boundary problems
+
+	DO K=1,NPAR
+	 IF(SU(K).LE.S1(K)) goto 14
+	 IF(SU(K).GE.S2(K)) goto 14
+	ENDDO
+
+c ---   get likelihood or energy 
+
+	IERR=0
+	CALL FUNC(SU,NPAR,FP)
+	NCT=NCT+1
+
+c --- boundary checks from within func
+
+        IF(IERR.EQ.1) GOTO 14 !checks on positivity problems
+
+C ---	R ratio 
+
+        ACC_P=MIN(1.D0,DEXP((-FP+F0)*beta))
+ 14     IF(ACC_P.EQ.1.D0) THEN
+
+	DO K=1,NPAR
+	 SU0(K)=SU(K)
+	 EU0(K)=EU(K)
+	ENDDO
+
+         F0=FP
+	 n_accept2=n_accept2+1
+
+	ELSE
+	 UD01=RAN2(ISEED)
+	 IF(UD01.LE.ACC_P) THEN
+
+	DO K=1,NPAR
+	 SU0(K)=SU(K)
+	 EU0(K)=EU(K)
+	ENDDO
+
+          F0=FP
+	  n_accept2=n_accept2+1
+
+	  ELSE
+	DO K=1,NPAR
+	 SU(K)=SU0(K)
+	 EU(K)=EU0(K) !reset to previous value
+	ENDDO
+
+	 FP=F0
+	 ENDIF
+	ENDIF
+
+c --- update the best likelihood estimate (ble)
+
+        IF(ACC_P.EQ.1.) THEN
+        IF(FP.LT.F_MIN) THEN
+           DO J=1,NPAR
+           SU0_MC(J)=SU0(J)
+           ENDDO
+           F_MIN=FP
+        ENDIF
+        ENDIF
+
+c ---------------------------------------------
+

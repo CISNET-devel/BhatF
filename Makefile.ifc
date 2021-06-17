@@ -1,0 +1,50 @@
+CC		= ifort
+CCFLAGS         = -c -132 -w -Vaxlib
+RM1		= rm -f
+PROGRAMS	= Bhat
+
+OBJS1 =  \
+	main.o\
+	hessian.o\
+	newton.o\
+	simplex.o\
+	migrad.o\
+	dqstep.o\
+	mcmc.het-gam2.o\
+	mcmc.het-lnorm2.o\
+	berkson.o\
+	global.o\
+	plkhci.o\
+	ftrafo.o\
+	btrafo.o\
+	ran2.o\
+	randgs.o
+
+all:	$(OBJS1)
+	ifort -c -w alngam.f90
+	ifort -c -w -O0 axeb.f
+	ifort -c -w -O0 rs.f
+	@echo building ranlib
+	@cd ./ranlib; make
+	@echo building archive
+	ar cr libBhat_ifc.a $(OBJS1) alngam.o axeb.o rs.o ./ranlib/*.o
+	ranlib libBhat_ifc.a
+
+.f.o: ; $(CC) $(CCFLAGS) -c $<
+
+clean:
+	rm -rf *.o
+	rm libBhat_ifc.a
+	@cd ./ranlib; rm -rf *.o
+	@cd ./subplx; rm -rf *.o
+
+
+
+
+
+
+
+
+
+
+
