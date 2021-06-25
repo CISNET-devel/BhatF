@@ -1,10 +1,13 @@
-CC		= gfortran
-CCFLAGS         = -c -ffixed-line-length-132 -O3 -ftree-vectorize -w
-RM1		= rm -f
-PROGRAMS	= Bhat
+FC              = gfortran
+FCFLAGS         = -g -c -ffixed-line-length-132 -w -fPIC
+FCOPT           = -O3
+PROGRAMS        = Bhat
+A_TARGET        = libBhat_f95.a
+SO_TARGET       = libBhat_f95.so
 
-OBJS1 =  \
-	main.o\
+.PHONY:  all a_lib so_lib
+
+OBJS =  \
 	hessian.o\
 	newton.o\
 	simplex.o\
@@ -20,31 +23,43 @@ OBJS1 =  \
 	ran2.o\
 	randgs.o
 
-all:	$(OBJS1)
-	gfortran -c -w alngam.f90
-	gfortran -c -w -O0 axeb.f
-	gfortran -c -w -O0 rs.f
-	@echo building ranlib
-	@cd ./ranlib; make
-	@echo building archive
-	ar crs libBhat_f95.a $(OBJS1) alngam.o axeb.o rs.o ./ranlib/*.o
-	@echo ranlib libBhat_f95.a
+OBJS_NOPT1 = axeb.o rs.o
+OBJS_NOPT2 = alngam.o
 
-.f.o: ; $(CC) $(CCFLAGS) -c $<
+all:	a_lib so_lib
+
+a_lib:	$(A_TARGET)
+
+so_lib: $(SO_TARGET)
+
+%.o:	%.f
+	$(FC) $(FCFLAGS) $(FCOPT) -c $<
+
+$(OBJS_NOPT1): %.o: %.f
+	$(FC) -c -O0 $(FCFLAGS) $<
+
+$(OBJS_NOPT2): %.o: %.f90
+	$(FC) -c $(FCFLAGS) $<
+
+
+ran_lib.stamp:
+	@echo building ranlib
+	@cd ./ranlib && $(MAKE) && touch $@
+
+
+$(A_TARGET): ran_lib.stamp $(OBJS) $(OBJS_NOPT1) $(OBJS_NOPT2) main.o
+	#gfortran -g -c -w alngam.f90
+	#gfortran -g -c -w -O0 axeb.f
+	#gfortran -g -c -w -O0 rs.f
+	@echo building archive
+	$(AR) crs $@ $(filter-out ran_lib.stamp,$^) ./ranlib/*.o
+
+$(SO_TARGET): ran_lib.stamp $(OBJS) $(OBJS_NOPT1) $(OBJS_NOPT2)
+	@echo building shared object
+	$(FC) -shared -o $@ $(filter-out ran_lib.stamp,$^) ./ranlib/*.o
 
 clean:
-	rm -rf *.o
-	rm libBhat_f95.a
-	@cd ./ranlib; rm -rf *.o
-	@cd ./subplx; rm -rf *.o
-
-
-
-
-
-
-
-
-
-
-
+	cd ./ranlib && $(MAKE) clean
+	rm -f ran_lib.stamp
+	rm -f $(OBJS) $(OBJS_NOPT1) $(OBJS_NOPT2) main.o
+	rm -f $(A_TARGET) $(SO_TARGET)
