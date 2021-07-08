@@ -2,3 +2,8 @@
 unneeded/
 *.o
 *.a
+*.so
+*~
+a.out
+TAGS
+test_runs/
