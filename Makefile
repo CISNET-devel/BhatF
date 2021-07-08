@@ -1,13 +1,14 @@
 FC              = gfortran
-FCFLAGS         = -g -c -ffixed-line-length-132 -w -fPIC
+FCFLAGS         = -g -w -fPIC
 FCOPT           = -O3
+FCFIXED		= -ffixed-line-length-132 
 PROGRAMS        = Bhat
 A_TARGET        = libBhat_f95.a
 SO_TARGET       = libBhat_f95.so
 
 .PHONY:  all a_lib so_lib
 
-OBJS =  \
+F77_OBJS =  \
 	hessian.o\
 	newton.o\
 	simplex.o\
@@ -25,6 +26,9 @@ OBJS =  \
 
 OBJS_NOPT1 = axeb.o rs.o
 OBJS_NOPT2 = alngam.o
+F90_OBJS = cpp_ftn_glue.o
+
+ALL_OBJS = $(F77_OBJS) $(OBJS_NOPT1) $(OBJS_NOPT2) $(F90_OBJS)
 
 all:	a_lib so_lib
 
@@ -32,13 +36,17 @@ a_lib:	$(A_TARGET)
 
 so_lib: $(SO_TARGET)
 
-%.o:	%.f
-	$(FC) $(FCFLAGS) $(FCOPT) -c $<
+$(F77_OBJS) main.o: %.o: %.f
+	$(FC) $(FCFLAGS) $(FCFIXED) $(FCOPT) -c $<
 
 $(OBJS_NOPT1): %.o: %.f
-	$(FC) -c -O0 $(FCFLAGS) $<
+	$(FC) -c -O0 $(FCFLAGS) $(FCFIXED) $<
 
 $(OBJS_NOPT2): %.o: %.f90
+	$(FC) -c $(FCFLAGS) $<
+
+# FIXME: add $(FCOPT)
+$(F90_OBJS):  %.o: %.f90
 	$(FC) -c $(FCFLAGS) $<
 
 
@@ -47,14 +55,11 @@ ran_lib.stamp:
 	@cd ./ranlib && $(MAKE) && touch $@
 
 
-$(A_TARGET): ran_lib.stamp $(OBJS) $(OBJS_NOPT1) $(OBJS_NOPT2) main.o
-	#gfortran -g -c -w alngam.f90
-	#gfortran -g -c -w -O0 axeb.f
-	#gfortran -g -c -w -O0 rs.f
+$(A_TARGET): ran_lib.stamp $(ALL_OBJS) main.o
 	@echo building archive
 	$(AR) crs $@ $(filter-out ran_lib.stamp,$^) ./ranlib/*.o
 
-$(SO_TARGET): ran_lib.stamp $(OBJS) $(OBJS_NOPT1) $(OBJS_NOPT2)
+$(SO_TARGET): ran_lib.stamp $(ALL_OBJS)
 	@echo building shared object
 	$(FC) -shared -o $@ $(filter-out ran_lib.stamp,$^) ./ranlib/*.o
 
