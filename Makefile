@@ -52,7 +52,7 @@ $(F90_OBJS):  %.o: %.f90
 
 ran_lib.stamp:
 	@echo building ranlib
-	@cd ./ranlib && $(MAKE) && touch $@
+	@(cd ./ranlib && $(MAKE)) && touch $@
 
 
 $(A_TARGET): ran_lib.stamp $(ALL_OBJS) main.o
