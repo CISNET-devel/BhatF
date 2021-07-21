@@ -112,6 +112,12 @@ subroutine func(u,npar,f)
 end subroutine func
 
 
+subroutine gnuplot_ini()
+  implicit none
+  write (*,*) 'DEBUG: Would have called GNUPLOT_INI here'
+end subroutine gnuplot_ini
+
+
 subroutine gnuplot()
   implicit none
   write (*,*) 'DEBUG: Would have called GNUPLOT here'
