@@ -12,7 +12,7 @@ c     W: Hessian eigen values
 c     Z: Hessian eigen vectors
  
       SUBROUTINE MCMC_HET_LNORM(NDIM,NPAR,LH,NCT,X0,F0,MEANV,COVM,X)
-	
+      
       IMPLICIT REAL*8 (A-H,O-Z)
       
       PARAMETER(NMAX=100, XINF=16., SENS=0.1)
@@ -83,7 +83,7 @@ c      READ(5,*) DSC
 
       PRINT*,'record every mth cycle:'
       READ(5,*) mth
-	
+      
       PRINT*,'ID, iseed1, iseed2:'
       READ(5,*) mc_id,iseed1,iseed2
 
@@ -123,7 +123,8 @@ c      READ(5,*) DSC
       N_ACC=0; N_ACC_LAMBDA=0
       
       IF(COVM(1,1) .NE. 0.) THEN
-         PRINT*,'already have COVM, will directly procede to pilot run 2'
+         PRINT*,'already have COVM, '//
+     $        'will directly procede to pilot run 2'
          PRINT 999
          sm=0.
          GOTO 75
@@ -131,7 +132,7 @@ c      READ(5,*) DSC
 
 c --- compute variances
 
-	CALL DQSTEP(NCT,NDIM,NPAR,X0,SENS,XINF,DEL)
+      CALL DQSTEP(NCT,NDIM,NPAR,X0,SENS,XINF,DEL)
         print*,'del',del(1:npar)
         MEANV(1:NPAR)=0.
 
@@ -169,8 +170,8 @@ c ---  compute covariance using Hessian
         DO I=1,NPAR
            BIDY(I,I)=1.D0
         ENDDO
-	IERR=0
-	CALL AXEB(DDF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IERR)
+      IERR=0
+      CALL AXEB(DDF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IERR)
         COVM=.5*BIDY  !use a 'bootstrapping' algorithm for adjusting scale
         
         ENDIF
@@ -196,9 +197,10 @@ c --- initialize covariance matrix for first run
 
 C --- start 1. training M chain -------------------
 
-	print 999
-	print*,'first pilot chain: using MLEs and log-transformed covariance'
-	print 999
+      print 999
+      print*,'first pilot chain: using MLEs'//
+     $     ' and log-transformed covariance'
+      print 999
 
         DO N=1,MCT0
 
@@ -211,19 +213,19 @@ c     compute width of random uniform proposal kernel
 c --- compute proposal x' (=y). If unacceptable, goto 4  
 
         X00=X0; Y=X0
-	DO I=1,NPAR
-	Y(IVN(I))=X0(IVN(I))+1.*X(I)
-	IF(ABS(Y(IVN(I))).GT.XINF) THEN
+      DO I=1,NPAR
+      Y(IVN(I))=X0(IVN(I))+1.*X(I)
+      IF(ABS(Y(IVN(I))).GT.XINF) THEN
            print*,'mcmc close to boundary, move rejected!',ivn(i)
            GOTO 4
         ENDIF  
-	ENDDO
+      ENDDO
 
 c ---   get likelihood or energy 
 
-	IERR=0
+      IERR=0
         CALL BTRAFO(NDIM,Y,SU)
-	CALL FUNC(SU,NDIM,FP); NCT=NCT+1
+      CALL FUNC(SU,NDIM,FP); NCT=NCT+1
 
 c --- boundary checks from within func
 
@@ -233,13 +235,13 @@ C ---	R ratio
 
         ACC_P=MIN(1.D0,DEXP((-FP+F0)))
  4	IF(ACC_P.EQ.1.D0) THEN
-	 X0=Y; F0=FP; n_acc=n_acc+1
-	ELSE
-	 UD01=GENUNF(0.,1.) !RAN2(ISEED)
-	 IF(UD01.LE.ACC_P) THEN
-	   X0=Y; F0=FP; n_acc=n_acc+1
-	 ENDIF
-	ENDIF
+       X0=Y; F0=FP; n_acc=n_acc+1
+      ELSE
+       UD01=GENUNF(0.,1.) !RAN2(ISEED)
+       IF(UD01.LE.ACC_P) THEN
+         X0=Y; F0=FP; n_acc=n_acc+1
+       ENDIF
+      ENDIF
 
         CALL BTRAFO(NDIM,X0,SU0)
 
@@ -256,14 +258,14 @@ c ---------------------------------------------
         IF(MOD(N,100).EQ.0) THEN
          WRITE(6,1007) N,N_ACC,(N_ACC_LAMBDA(I),I=1,LH)
          WRITE(6,1006) F0,(SU0(IVN(I)),I=1,NPAR)
-	 N_ACC=0  !resetting the acceptance counter to zero
+       N_ACC=0  !resetting the acceptance counter to zero
         ENDIF
-	
+      
         CALL BTRAFO(NDIM,X00,SU00)
         CALL FTRAFO(NDIM,X0,SU0)
 
          DO I=1,NPAR
-	  SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
+        SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
           THETA(I)=SM(I)/FLOAT(N)  !new mean
          ENDDO
 
@@ -273,26 +275,26 @@ c ---------------------------------------------
            IVJ=IVN(J)
            C_SUM(I,J)=C_SUM(I,J)+((SU0(IVI)-SU00(IVI))-THETA(I))*
      &                          ((SU0(IVJ)-SU00(IVJ))-THETA(J))
-	  ENDDO
+        ENDDO
          ENDDO
 
 c -----------------------------------------------------------------------
 
          ENDDO !n     end of 1. training run
          
-	 PRINT 999
+       PRINT 999
 
          SM=0.D0; COVM=C_SUM/FLOAT(MCT0) 
           
 C ---	get eigenvalues and eigenvectors of covariance matrix
 
-	NRC=NPAR; IERR=0
+      NRC=NPAR; IERR=0
         CALL RS(NMAX,NRC,C_SUM,W,0,S,fwork1,fwork2,ie)
-	PRINT*,'RS error: ',ie
+      PRINT*,'RS error: ',ie
 
-	PRINT 999
-	PRINT 9040,(W(I),I=1,NPAR)
-	PRINT 999
+      PRINT 999
+      PRINT 9040,(W(I),I=1,NPAR)
+      PRINT 999
 c        DO I=1,NPAR
 c 	 PRINT 9050,(S(I,J),J=1,NPAR)
 c        ENDDO
@@ -309,11 +311,12 @@ c         ENDDO
 
 c ---  procede with Q sampling from multivariate normal with COVM
 
-	MC_Smax=2; MC_S=0; N_ACC=0; N_ACC_LAMBDA=0
+      MC_Smax=2; MC_S=0; N_ACC=0; N_ACC_LAMBDA=0
 
-	print 999
-	print*,'second pilot chain: includes update for heterog. parameters'
-	print 999
+      print 999
+      print*,'second pilot chain: includes update '//
+     $     'for heterog. parameters'
+      print 999
 
 c ---  check for heterog. parameters
 
@@ -338,12 +341,12 @@ c ---  generate lambda_i's from log-normal distribution
            ENDDO
         ENDDO
 
-	CALL FUNC(SU0,NDIM,F0); NCT=NCT+1 !fills lkh's
+      CALL FUNC(SU0,NDIM,F0); NCT=NCT+1 !fills lkh's
         print*,'first (imcmc=1) function call: ',F0,sum(lkh(1:nobs))
 
         ELSEIF(IMCMC.EQ.2) THEN
 
-	CALL FUNC(SU0,NDIM,F0); NCT=NCT+1
+      CALL FUNC(SU0,NDIM,F0); NCT=NCT+1
         print*,'first imcmc=2 function call: ',F0
            G0=0.
            DO I=1,NDIM
@@ -358,7 +361,7 @@ c ---  generate lambda_i's from log-normal distribution
 
         ELSE
 
-	CALL FUNC(SU0,NDIM,F0); NCT=NCT+1
+      CALL FUNC(SU0,NDIM,F0); NCT=NCT+1
         print*,'first imcmc=0 function call: ',f0
 
         ENDIF
@@ -370,9 +373,9 @@ c ---  generate lambda_i's from log-normal distribution
            WSIG=EXP(SIG(I)*SIG(I))
            TSIG(I)=SU0(IRE(I))*DSQRT(WSIG*WSIG-WSIG)
         ENDDO
-	WRITE(8,1001) mc_id,F0,(SU0(IVN(I)),I=1,NPAR),(TSIG(I),I=1,LH)
+      WRITE(8,1001) mc_id,F0,(SU0(IVN(I)),I=1,NPAR),(TSIG(I),I=1,LH)
         ELSE
-	WRITE(8,1001)  mc_id,F0,(SU0(IVN(I)),I=1,NPAR)
+      WRITE(8,1001)  mc_id,F0,(SU0(IVN(I)),I=1,NPAR)
         ENDIF
 
         close(8)
@@ -407,11 +410,11 @@ c     All parameters SU0 labeled 'H' are replaced by their respective means
 c     which are Gibbs sampled.
 
         SU00=SU0; Y=SU0
-	DO I=1,NPAR
-	Y(IVN(I))=SU0(IVN(I))+scl*X(I)
+      DO I=1,NPAR
+      Y(IVN(I))=SU0(IVN(I))+scl*X(I)
 
         IF(RNF(IVN(I)).NE.'H') THEN
-	  IF(Y(IVN(I)).LT.S1(IVN(I))) THEN
+        IF(Y(IVN(I)).LT.S1(IVN(I))) THEN
            PRINT*,'down move rejected!',IVN(i)
            GOTO 14
           ELSEIF(Y(IVN(I)).GT.S2(IVN(I))) THEN
@@ -420,9 +423,9 @@ c     which are Gibbs sampled.
           ENDIF
         ENDIF
 
-	ENDDO
+      ENDDO
         
-	CALL FUNC(Y,NDIM,FP); NCT=NCT+1
+      CALL FUNC(Y,NDIM,FP); NCT=NCT+1
 
         IF(IMCMC.EQ.2) THEN
 
@@ -433,7 +436,8 @@ c     which are Gibbs sampled.
                  b_prior=x_prior(i)/s_prior(i)/s_prior(i)
                  GP=GP+y(ivn(i))*b_prior-(a_prior-1.)*log(y(ivn(i)))
                  ELSEIF(RNF(I).EQ.'N') THEN
-                 GP=GP-((y(ivn(i))-x_prior(i))**2)/2./s_prior(i)/s_prior(i)
+                 GP=GP-((y(ivn(i))-x_prior(i))**2)/
+     $                   2./s_prior(i)/s_prior(i)
                  ENDIF
            ENDDO
            
@@ -451,12 +455,12 @@ C ---	R ratio ---------------------------------------------------
         ACC_P=MIN(1.D0,DEXP((-Fnew+Fold)))
 
  14	IF(ACC_P.EQ.1.D0) THEN
-	 SU0=Y; F0=FP; G0=GP; lkh0=lkh; n_acc=n_acc+1
-	ELSE
-	 IF(genunf(0.,1.).LE.ACC_P) THEN
-	   SU0=Y; F0=FP; G0=GP; lkh0=lkh; n_acc=n_acc+1
-	 ENDIF
-	ENDIF
+       SU0=Y; F0=FP; G0=GP; lkh0=lkh; n_acc=n_acc+1
+      ELSE
+       IF(genunf(0.,1.).LE.ACC_P) THEN
+         SU0=Y; F0=FP; G0=GP; lkh0=lkh; n_acc=n_acc+1
+       ENDIF
+      ENDIF
 ! -----------------------------------------------------------------
 
         IF(IMCMC.EQ.1) THEN
@@ -465,7 +469,8 @@ c ---  step1: sample eta (log mean) | sig, lambda using Gibbs
 
            DO I=1,LH  !for each heterogeneous parameter
             expect_log_lambda=sum(dlog(lambda(i,1:nobs)))/nobs
-            eta=gennor(real(expect_log_lambda),real(sig(i)/sqrt(float(nobs)))) 
+            eta=gennor(real(expect_log_lambda),
+     $                 real(sig(i)/sqrt(float(nobs)))) 
             su0(ire(i))=dexp(eta)
 
 c ---  step2: sample 1/2/sig^2 from gamma distr.
@@ -491,7 +496,7 @@ c --- compute remaining factors:
 c --- get new lkh's for current point (su0) and with these proposed lambda_i's
 c     for lambda's that do not change this may be simplified (???)
 
-	CALL FUNC(SU0,NDIM,FDUM); NCT=NCT+1 
+      CALL FUNC(SU0,NDIM,FDUM); NCT=NCT+1 
 
 c --- use Metropolis-Hastings here to accept or reject the lambda_i's 
 c     individual by individual, for a specific 'H' parameter
@@ -505,14 +510,14 @@ c     individual by individual, for a specific 'H' parameter
           LAMBDA0(I,K)=LAMBDA(I,K)
           LKH0(K)=LKH(K)
           N_ACC_LAMBDA(I)=N_ACC_LAMBDA(I)+1
-	 ELSE
+       ELSE
 
-	  IF(GENUNF(0.,1.).LE.ACC_P) THEN
+        IF(GENUNF(0.,1.).LE.ACC_P) THEN
            LAMBDA0(I,K)=LAMBDA(I,K)
            LKH0(K)=LKH(K)
            N_ACC_LAMBDA(I)=N_ACC_LAMBDA(I)+1
-	  ENDIF
-	 ENDIF
+        ENDIF
+       ENDIF
         ENDDO
         LAMBDA=LAMBDA0; LKH=LKH0
         N_ACC_LAMBDA(I)=100*(N_ACC_LAMBDA(I)/FLOAT(NOBS)) !average acceptance per cycle
@@ -544,13 +549,13 @@ c ---------------------------------------------
         ENDDO
         WRITE(6,1007) N,N_ACC,(N_ACC_LAMBDA(I),I=1,LH)
         WRITE(6,1006) F0,(SU0(IVN(I)),I=1,NPAR)
-	N_ACC=0; N_ACC_LAMBDA=0  !resetting the acceptance counter to zero
+      N_ACC=0; N_ACC_LAMBDA=0  !resetting the acceptance counter to zero
 
         endif
-	
+      
 c --- write
 
-	if(mod(n,mth).eq.0) then
+      if(mod(n,mth).eq.0) then
         OPEN(8,FILE='mcmc.out',STATUS='unknown',POSITION='append')
 
         IF(IMCMC.EQ.1) THEN
@@ -559,19 +564,19 @@ c --- write
            WSIG=EXP(SIG(I)*SIG(I))
            TSIG(I)=SU0(IRE(I))*DSQRT(WSIG*WSIG-WSIG)
         ENDDO
-	WRITE(8,1001) mc_id,F0,(SU0(IVN(I)),I=1,NPAR),(TSIG(I),I=1,LH)
+      WRITE(8,1001) mc_id,F0,(SU0(IVN(I)),I=1,NPAR),(TSIG(I),I=1,LH)
         ELSE
-	WRITE(8,1001) mc_id,F0,(SU0(IVN(I)),I=1,NPAR)
+      WRITE(8,1001) mc_id,F0,(SU0(IVN(I)),I=1,NPAR)
         ENDIF
         close(8)
-	endif
+      endif
 
 c --- monitor covariance of 'increment' distribution
 
         IF(MC_S.LT.MC_Smax) THEN
 
          DO I=1,NPAR
-	  SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
+        SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
           THETA(I)=SM(I)/FLOAT(N)  !new mean
          ENDDO
 
@@ -581,15 +586,15 @@ c --- monitor covariance of 'increment' distribution
            IVJ=IVN(J)
           C_SUM(I,J)=C_SUM(I,J)+((SU0(IVI)-SU00(IVI))-theta(I))*
      &                          ((SU0(IVJ)-SU00(IVJ))-theta(J))
-	  ENDDO
+        ENDDO
          ENDDO
 
         ENDIF
 c ---------------------------------------
 
-	ENDDO !n
+      ENDDO !n
 
-	MC_S=MC_S+1
+      MC_S=MC_S+1
 
         IF(MC_S.LT.MC_Smax) THEN
            PRINT 999
@@ -618,28 +623,28 @@ c --- allow for change in scale
               goto 66
            endif
         ENDIF
-	
-	print 999
-	print*,'chain: ',MC_S
-	print 999
+      
+      print 999
+      print*,'chain: ',MC_S
+      print 999
 
 c ---  exit -- final analysis - return approx. mle
 
         PRINT*,' '
-	
+      
         CALL FTRAFO(NDIM,X0,SU0_MC)
 
         PRINT 1003
-	DO I=1,NDIM
+      DO I=1,NDIM
         SU(I)=SU0_MC(I)
-	PRINT 1002,LABELS(I),ESU0(I)/FLOAT(NCMC),SU(I)
-	ENDDO
+      PRINT 1002,LABELS(I),ESU0(I)/FLOAT(NCMC),SU(I)
+      ENDDO
         
         F0=F_MIN
         
         CALL SYSTEM('killall gnuplot')
 
-	RETURN
+      RETURN
  999    FORMAT(/)
  1000	FORMAT(I5,F12.4,30E12.4)
  1001	FORMAT(I5,30E16.8)
@@ -650,5 +655,5 @@ c ---  exit -- final analysis - return approx. mle
 c 1008  FORMAT('accepted: ',30I4)
  9040  FORMAT(/,' eigenvalues:  ',/,30E12.4,/)
  9050  FORMAT(30E14.6)
-	END
+      END
 

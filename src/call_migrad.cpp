@@ -66,7 +66,7 @@ extern "C" void migrad(const int* ndim,
 
 extern "C"
 void cpp_callback(double* f,
-                  const int* iflag, const double u[], const int* npar)
+                  const int* /*iflag*/, const double u[], const int* npar)
 {
     std::cout << "DEBUG: cpp_callback() is called." << std::endl;
     const auto sz = sizeof(data1)/sizeof(*data1);

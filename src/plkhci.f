@@ -56,7 +56,8 @@ C *********************** SPECIFICATIONS *************************************
       NLM=(NPAR*NPAR+3*NPAR)/2
 
 C --------------------------------------------------------------------------
-      WRITE(6, FMT='(A54)',ADVANCE='YES') 'Bhat will attempt to compute profile likelihood bounds'
+      WRITE(6, FMT='(A54)',ADVANCE='YES')
+     $     'Bhat will attempt to compute profile likelihood bounds'
  24   WRITE(6, FMT='(A7)', ADVANCE='NO') 'Label: '
       READ(5, FMT='(A10)', ADVANCE='YES', ERR=25) FLBL
 
@@ -69,10 +70,10 @@ C --------------------------------------------------------------------------
            ENDDO
 
         PRINT*,' assuming max. log. likelihood: ',F_MLE
-	
+      
         SUU_FLAG='non-converged'; SUL_FLAG='non-converged'
 
-	CALL BTRAFO(NDIM,X0_MLE,SU_MLE)
+      CALL BTRAFO(NDIM,X0_MLE,SU_MLE)
 
         CALL DQSTEP(NCT,NDIM,NPAR,X0_MLE,SENS,XINF,DEL)
 
@@ -82,51 +83,51 @@ c *** shoot along tangent to initialize first step
 
 c ****  construct DDL
 
-	IE=0
-	DO 82 I=1,NPAR
-	I1=I-IE
+      IE=0
+      DO 82 I=1,NPAR
+      I1=I-IE
 
-		IF(I.EQ.INB) THEN
-		IE=1
-		GOTO 82
-		ENDIF
+      	IF(I.EQ.INB) THEN
+      	IE=1
+      	GOTO 82
+      	ENDIF
 
-		JE=0
-		DO 84 J=1,NPAR
-		J1=J-JE
+      	JE=0
+      	DO 84 J=1,NPAR
+      	J1=J-JE
 
-			IF(J.EQ.INB) THEN
-			JE=1
-			GOTO 84
-			ENDIF
-	
-	DDL(I1,J1)=DDF(I,J)
+      		IF(J.EQ.INB) THEN
+      		JE=1
+      		GOTO 84
+      		ENDIF
+      
+      DDL(I1,J1)=DDF(I,J)
  84             CONTINUE  
  82   CONTINUE  
 
 c ****  construct DBO
 
-	J=1
-	DO I=1,NPAR
-	IF(I.NE.INB) THEN
-	DBO(J)=DDF(INB,I)
-	J=J+1
-	ENDIF
-	ENDDO
+      J=1
+      DO I=1,NPAR
+      IF(I.NE.INB) THEN
+      DBO(J)=DDF(INB,I)
+      J=J+1
+      ENDIF
+      ENDDO
 
 C ****  construct DBB
 
-	DBB=DDF(INB,INB)
+      DBB=DDF(INB,INB)
 
 C ***   matrix inversion: DDL inverse
 
         BIDY=0.D0
         DO I=1,ND1
-	BIDY(I,I)=1.D0
+      BIDY(I,I)=1.D0
         ENDDO
         FDD=DDL
 
-	CALL AXEB(FDD,ND1,NMAX,BIDY,ND1,NMAX,0,WAREA,IE) !check warea
+      CALL AXEB(FDD,ND1,NMAX,BIDY,ND1,NMAX,0,WAREA,IE) !check warea
 
         SUM_I=0.D0; DBL=0.D0
         DO I=1,ND1
@@ -149,15 +150,15 @@ c      READ*,RNEPS
            
         X0=X0_MLE   
         X0(IVN(INB))=X0(IVN(INB))+IDIR*DSQRT(3.84D0/(DBB-SUM_I))/2.D0
-	j=1
-	do i=1,npar
-	if(i.ne.inb) then
+      j=1
+      do i=1,npar
+      if(i.ne.inb) then
         X0(IVN(I))=X0(IVN(I))-IDIR*DBL(J)*DSQRT(3.84D0/(DBB-SUM_I))/2.D0
-	j=j+1
+      j=j+1
         endif
-	enddo
+      enddo
 
-	CALL BTRAFO(NDIM,X0,SU)
+      CALL BTRAFO(NDIM,X0,SU)
         CALL FUNC(SU,NDIM,F0); NCT=NCT+1
 
 c         PRINT*,'      modified    mle       f0: ',F0
@@ -169,9 +170,11 @@ c *** search via Newton-Raphson
 
  99     PRINT*,' '
         IF(IDIR==-1) THEN
-           PRINT*,'begin Newton-Raphson search for lower confidence bound'
+           PRINT*,'begin Newton-Raphson search'//
+     $          ' for lower confidence bound'
         ELSE
-           PRINT*,'begin Newton-Raphson search for upper confidence bound'
+           PRINT*,'begin Newton-Raphson search'//
+     $          ' for upper confidence bound'
         ENDIF
 
       PRINT*,' '
@@ -182,37 +185,37 @@ c *** search via Newton-Raphson
 
 c *** compute DDL 
 
-	IE=0
-	DO 92 I=1,NPAR
-	I1=I-IE
+      IE=0
+      DO 92 I=1,NPAR
+      I1=I-IE
 
-		IF(I.EQ.INB) THEN
-		IE=1
-		GOTO 92
-		ENDIF
+      	IF(I.EQ.INB) THEN
+      	IE=1
+      	GOTO 92
+      	ENDIF
 
-		JE=0
-		DO 94 J=1,NPAR
-		J1=J-JE
+      	JE=0
+      	DO 94 J=1,NPAR
+      	J1=J-JE
 
-			IF(J.EQ.INB) THEN
-			JE=1
-			GOTO 94
-			ENDIF
-	
-	DDL(I1,J1)=DDF(I,J)
+      		IF(J.EQ.INB) THEN
+      		JE=1
+      		GOTO 94
+      		ENDIF
+      
+      DDL(I1,J1)=DDF(I,J)
  94             CONTINUE  
  92   CONTINUE 
  
 c ****  construct DBO
 
-	J=1
-	DO I=1,NPAR
-	IF(I.NE.INB) THEN
-	DBO(J)=DDF(INB,I)
-	J=J+1
-	ENDIF
-	ENDDO
+      J=1
+      DO I=1,NPAR
+      IF(I.NE.INB) THEN
+      DBO(J)=DDF(INB,I)
+      J=J+1
+      ENDIF
+      ENDDO
 
 c ***  construct matrix FDD
 
@@ -240,7 +243,7 @@ c ***  construct matrix FDD
            FDD(I,1)=DBO(I-1)
         ENDDO
 
-	CALL AXEB(FDD,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE) !check warea
+      CALL AXEB(FDD,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE) !check warea
 
 c *** shoot ahead
 
@@ -274,7 +277,7 @@ C       PRINT 8060,DISC(J),DUM
 
 C *** update f0
 
-	CALL BTRAFO(NDIM,X0,SU)
+      CALL BTRAFO(NDIM,X0,SU)
         CALL FUNC(SU,NDIM,F0); NCT=NCT+1
         RHS1=DABS(F_MLE-F0+1.92D0)
 
@@ -289,7 +292,8 @@ C *** update f0
 c        ELSEIF(RHS0.GE.RHS1. AND. NEPSC.EQ.0) THEN
 c           RNEPS=RNEPS**.5
          ELSEIF(RHS1.GT.3.84 .AND. NEPSC.EQ.11) THEN
-            PRINT*,'problem closing in, will continue with min distance'  
+            PRINT*,'problem closing in,
+     $ will continue with min distance'
             DISC=RNEPS_MIN*DISC0
             NZ=0
             X0(IVN(INB))=X00(IVN(INB))+DISC(1)
@@ -319,10 +323,10 @@ c -----------------------------------------------------------------------
         WRITE(6,9020) N,(F0-F_MLE),LABELS(IVN(1)),SU(IVN(1)),X0(IVN(1)),
      &  DF(1),DDF(1,1),NCT
 
-	DO I=2,NPAR
+      DO I=2,NPAR
            IVI=IVN(I)
       write(6,9030) LABELS(IVI),SU(IVI),X0(IVI),DF(I),DDF(I,I)
-	ENDDO
+      ENDDO
         IF(IDIR== 1) THEN
            SUU=SU(IVN(INB)); SUU_flag='converged'
         ELSEIF(IDIR==-1) THEN
@@ -338,10 +342,10 @@ c -----------------------------------------------------------------------
         WRITE(6,9020) N,(F0-F_MLE),LABELS(IVN(1)),SU(IVN(1)),X0(IVN(1)),
      &  DF(1),DDF(1,1),NCT
 
-	DO I=2,NPAR
+      DO I=2,NPAR
            IVI=IVN(I)
       write(6,9030) LABELS(IVI),SU(IVI),X0(IVI),DF(I),DDF(I,I)
-	ENDDO
+      ENDDO
         PRINT*,' '
         PRINT*,'Confidence Bound Estimate: ', SU(IVN(INB))
         PRINT*,' '
@@ -349,9 +353,9 @@ c -----------------------------------------------------------------------
         ENDDO !N=
 
         PRINT*,'another Newton-Raphson run?'
-	READ(5,7010) ANSWER
+      READ(5,7010) ANSWER
 
-	IF(ANSWER.EQ.'Y'.OR.ANSWER.EQ.'y') THEN
+      IF(ANSWER.EQ.'Y'.OR.ANSWER.EQ.'y') THEN
            GOTO 99
         ELSE
            IF(IDIR== 1) THEN
@@ -363,9 +367,12 @@ c -----------------------------------------------------------------------
         ENDIF
 
  98     CONTINUE
-        WRITE(6, FMT='(/,A37,A10)',ADVANCE='YES') 'ESTIMATED PROFILE LIKELIHOOD BOUNDS: ',FLBL 
-        WRITE(6, FMT='(A20,E16.8,2x,A13)',ADVANCE='YES') 'lower plkh bound: ',sul,sul_flag
-        WRITE(6, FMT='(A20,E16.8,2x,A13)',ADVANCE='YES') 'upper plkh bound: ',suu,suu_flag
+        WRITE(6, FMT='(/,A37,A10)',ADVANCE='YES')
+     $       'ESTIMATED PROFILE LIKELIHOOD BOUNDS: ',FLBL 
+        WRITE(6, FMT='(A20,E16.8,2x,A13)',ADVANCE='YES')
+     $       'lower plkh bound: ',sul,sul_flag
+        WRITE(6, FMT='(A20,E16.8,2x,A13)',ADVANCE='YES')
+     $       'upper plkh bound: ',suu,suu_flag
 
         GOTO 24
 
@@ -380,4 +387,4 @@ c -----------------------------------------------------------------------
 
 
 
-	
+      

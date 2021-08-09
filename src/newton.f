@@ -42,28 +42,28 @@ C ***	INITIALIZE ITERATION LOOP
         CALL FUNC(SU,NDIM,F0); NCT=NCT+1
 
         DO 10 N=1,NWT_MAX
-		
-	PRINT*,' ' 
-	PRINT*,'FUNCTION VALUE: ',F0,'     CALL: ',NCT
-	PRINT*,' ' 
+      	
+      PRINT*,' ' 
+      PRINT*,'FUNCTION VALUE: ',F0,'     CALL: ',NCT
+      PRINT*,' ' 
 
 C -------------------------------------------------------------------
 
-	IF(I_HESSE.EQ.1)	THEN	!compute Hessian to high accuracy:
+      IF(I_HESSE.EQ.1)	THEN	!compute Hessian to high accuracy:
 
-	CALL HESSIAN(NPAR,NDIM,IVN,X0,Y,DF,DDF,W,Z,NCT)
+      CALL HESSIAN(NPAR,NDIM,IVN,X0,Y,DF,DDF,W,Z,NCT)
    
         BIDY=0.D0; GGF=DDF
     
         IF(INEW.EQ.0) PRINT 9001,(((GGF(I,J)),I=1,NPAR),J=1,NPAR)	
-	
-	DO I=1,NPAR
-	BIDY(I,I)=1.D0
-	ENDDO
+      
+      DO I=1,NPAR
+      BIDY(I,I)=1.D0
+      ENDDO
 
-	CALL AXEB(GGF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE)
+      CALL AXEB(GGF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE)
 
-	ELSE
+      ELSE
 
 C *** INITIALIZE NEWTON BY CALCULATION OF A
 C     NLM POINT SIMPLEX GEOMETRY IN N DIM PARAMETER SPACE
@@ -80,7 +80,7 @@ C ***   ON AXES
 
 C ***	compute delta distance in each direction
 
-	IF(N.EQ.1) DEL(I)=DSTEPS(I)       ! .0001D0+.001d0*dabs(X0(I))
+      IF(N.EQ.1) DEL(I)=DSTEPS(I)       ! .0001D0+.001d0*dabs(X0(I))
 
                 J=2*I
                 K=J-1
@@ -135,12 +135,12 @@ C ***   MATRIX INVERSION
 
 C ***	CHECK EIGENVALUES
 
-	NRC=NPAR
+      NRC=NPAR
         CALL RS(NMAX,NRC,FDD,W,0,Z,fwork1,fwork2,ie)
 
         FDD=DDF         !restore Hessian
 
-	CALL AXEB(FDD,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE)
+      CALL AXEB(FDD,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE)
 
 C ***   ACCURACY TEST
         ety=0.
@@ -155,13 +155,13 @@ c        print*,'test 1'
 c        print*,(ety(i,i),i=1,npar)
 c        print*,ety(2,3),ety(3,2)
 
-	IF(IBOOT.EQ.0) THEN
-	PRINT 1000
-	PRINT 9040,(W(I),I=1,NPAR)
+      IF(IBOOT.EQ.0) THEN
+      PRINT 1000
+      PRINT 9040,(W(I),I=1,NPAR)
 C	PRINT 9050,((Z(J,I),J=1,NPAR),I=1,NPAR)
-	ENDIF
+      ENDIF
 
-	ENDIF
+      ENDIF
 
 C ---	variable Newton stepping
 
@@ -212,23 +212,23 @@ C ---   STOP-CRITERION FOR ITERATION --------------------------------------
 
 C ---	compute Hessian symmetrically:
 
-	CALL HESSIAN(NPAR,NDIM,IVN,X0,Y,DF,DDF,W,Z,NCT)
+      CALL HESSIAN(NPAR,NDIM,IVN,X0,Y,DF,DDF,W,Z,NCT)
 
         BIDY=0.D0; GGF=DDF
-	DO I=1,NPAR
-	BIDY(I,I)=1.D0
-	ENDDO
+      DO I=1,NPAR
+      BIDY(I,I)=1.D0
+      ENDDO
 
-	CALL AXEB(GGF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE)
+      CALL AXEB(GGF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IE)
 
-	DO I=1,NPAR
-	DO J=1,NPAR
-	DO L=1,NPAR
-	ENS(I,J)=ENS(I,J)+DDF(I,L)*BIDY(L,J)
-	ENDDO
-	ENDDO
-	ENDDO
-	
+      DO I=1,NPAR
+      DO J=1,NPAR
+      DO L=1,NPAR
+      ENS(I,J)=ENS(I,J)+DDF(I,L)*BIDY(L,J)
+      ENDDO
+      ENDDO
+      ENDDO
+      
 C        PRINT 9002,(((ENS(I,J)),I=1,NPAR),J=1,NPAR)
 C        PRINT 9000,(((BIDY(I,J)),I=1,NPAR),J=1,NPAR)	
 
@@ -236,7 +236,8 @@ C        PRINT 9000,(((BIDY(I,J)),I=1,NPAR),J=1,NPAR)
  	DO I=1,NPAR
            IF(BIDY(I,I).LE.0.D0) THEN
               SE(I)=0.D0
-              PRINT*,'INFORMATION MATRIX NOT POS. DEF. OR SOME OTHER PROBLEM'
+              PRINT*,'INFORMATION MATRIX NOT POS. DEF.'//
+     $               ' OR SOME OTHER PROBLEM'
            ELSE
               SE(I)=DSQRT(BIDY(I,I))
            ENDIF
@@ -244,12 +245,12 @@ C        PRINT 9000,(((BIDY(I,J)),I=1,NPAR),J=1,NPAR)
 C	GGF(IVN(I),IVN(I))=se(i)*1.96
            X0L(IVN(I))=X0(IVN(I))-se(i)*1.96
            X0U(IVN(I))=X0(IVN(I))+se(i)*1.96
-	ENDDO	
+      ENDDO	
 
         CALL BTRAFO(NDIM,X0,SU)        
         CALL BTRAFO(NDIM,X0L,SUL)
         CALL BTRAFO(NDIM,X0U,SUU)
-	
+      
         WRITE(6,9009) STAMP,STATUS
         WRITE(6,9005)
         J=1
@@ -260,21 +261,21 @@ C	GGF(IVN(I),IVN(I))=se(i)*1.96
           WRITE(6,9023) N,F0,LABELS(1),SU(1),NCT
         ENDIF
 
-	DO I=2,NDIM
+      DO I=2,NDIM
         IF(IVN(J).EQ.I) THEN
           WRITE(6,9032) LABELS(I),SU(I),DF(I),SUL(I),SUU(I) 
           J=J+1
         ELSE
           WRITE(6,9033) LABELS(I),SU(I)
         ENDIF
-	ENDDO
+      ENDDO
 
-	ELSE	!IBOOT=2
+      ELSE	!IBOOT=2
 
-	WRITE(9,6000) F0,(SU(I),I=1,NPAR),W(1)
-	RETURN	!GO BACK TO BOOTSTRAPLOOP
+      WRITE(9,6000) F0,(SU(I),I=1,NPAR),W(1)
+      RETURN	!GO BACK TO BOOTSTRAPLOOP
 
-	ENDIF
+      ENDIF
 
 c --- graphical diagnostic
 !!        include 'newton.graph.incl'
@@ -284,19 +285,20 @@ c --- graphical diagnostic
 
 C ***	DURING NON-CONVERGEING CYCLES
 
-	IF(INEW.EQ.0) THEN
+      IF(INEW.EQ.0) THEN
 
         I_HESSE=1
         INEW  =1
-	ENDIF
-	
+      ENDIF
+      
 c        IF(INEW.EQ.0) PRINT 9000,(((BIDY(I,J)),I=1,NDIM),J=1,NDIM)	
 
         X0L=X0; X0U=X0
  	DO I=1,NPAR
            IF(BIDY(I,I).LE.0.D0) THEN
               SE(I)=0.D0
-              PRINT*,'INFORMATION MATRIX NOT POS. DEF. OR SOME OTHER PROBLEM'
+              PRINT*,'INFORMATION MATRIX NOT POS. DEF.'//
+     $               ' OR SOME OTHER PROBLEM'
            ELSE
               SE(i)=DSQRT(BIDY(I,I))
            ENDIF
@@ -304,12 +306,12 @@ c        IF(INEW.EQ.0) PRINT 9000,(((BIDY(I,J)),I=1,NDIM),J=1,NDIM)
            SE(I)=SE(I)*1.96
            X0L(IVN(I))=X0(IVN(I))-se(i)
            X0U(IVN(I))=X0(IVN(I))+se(i)
-	ENDDO	
-	
+      ENDDO	
+      
         CALL BTRAFO(NDIM,X0,SU)        
         CALL BTRAFO(NDIM,X0L,SUL)
         CALL BTRAFO(NDIM,X0U,SUU)
-	
+      
         STATUS='not converged'
         WRITE(6,9009) STAMP,STATUS
         WRITE(6,9005)
@@ -321,33 +323,33 @@ c        IF(INEW.EQ.0) PRINT 9000,(((BIDY(I,J)),I=1,NDIM),J=1,NDIM)
           WRITE(6,9023) N,F0,LABELS(1),SU(1),NCT
         ENDIF
 
-	DO I=2,NDIM
+      DO I=2,NDIM
         IF(IVN(J).EQ.I) THEN
           WRITE(6,9032) LABELS(I),SU(I),DF(I),SUL(I),SUU(I) 
           J=J+1
         ELSE
           WRITE(6,9033) LABELS(I),SU(I)
         ENDIF
-	ENDDO
+      ENDDO
 
 C -----------------------------------------------------------------    GET OUT	
-	IF(INEW.EQ.0.AND.IBOOT.LE.1) THEN
+      IF(INEW.EQ.0.AND.IBOOT.LE.1) THEN
         PRINT 1000
         PRINT*,'DO YOU WANT TO LEAVE NEWTON PROCEDURE?'
         READ(5,7010) ANSWER
         IF(ANSWER.EQ.'Y')  RETURN
-	ELSEIF(INEW.EQ.0.AND.IBOOT.EQ.2) THEN
-	PRINT*,'UNSUCCESSFULL NEWTON SEARCH - TRY GRADIENT SEARCH AGAIN'
-	INEW=3
-	RETURN
-	ENDIF
+      ELSEIF(INEW.EQ.0.AND.IBOOT.EQ.2) THEN
+      PRINT*,'UNSUCCESSFULL NEWTON SEARCH - TRY GRADIENT SEARCH AGAIN'
+      INEW=3
+      RETURN
+      ENDIF
 C ----------------------------------------------------------------- 
-	IF(MOD(N,10).EQ.0) INEW=0	! resetting inew after 10 iterations
+      IF(MOD(N,10).EQ.0) INEW=0	! resetting inew after 10 iterations
 
 10      CONTINUE
         PRINT*,'NEWTON SEARCH NOT CONVERGED!'
-	
-	RETURN
+      
+      RETURN
 6000  FORMAT(F15.5,30(E18.8),E16.6)
 7010	FORMAT(A10)
 7020	FORMAT('ENTER FURTHER OPTIONS (ERROR, CONTOUR , SAVE ETC.): ')
@@ -390,5 +392,5 @@ c9052	FORMAT(F12.4)
      &  'toplabel "Xmin CONTOUR PLOT"',/)
  
 1000    FORMAT(/)
-	END
+      END
 

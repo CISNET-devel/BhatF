@@ -2,7 +2,7 @@ c *** MARKOV-CHAIN MONTE-CARLO METHOD SEARCH ALGORITHM
 c     
 c     INCLUDES: mcmc.block
       SUBROUTINE GLOBAL(NDIM,NPAR,NCT,X0,F0,COVM)
-	
+      
       IMPLICIT REAL*8 (A-H,O-Z)
 
       PARAMETER(NMAX=100,EPS=.5d-1)
@@ -76,14 +76,14 @@ c      READ(5,9) BLOCK
       BLOCK='n'
         
         CALL BTRAFO(NDIM,X0,SU0)
-	CALL FUNC(SU0,NDIM,F00); NCT=NCT+1
+      CALL FUNC(SU0,NDIM,F00); NCT=NCT+1
         F0=F00
 
       CALL GNUPLOT_GLOBAL_INI(NPAR)
 
         OPEN(8,FILE='global.out',STATUS='unknown',POSITION='append')
-	WRITE(8,1001) F0,(SU0(IVN(I)),I=1,NPAR)
-	WRITE(8,1001) 1.00000001*F0,(SU0(IVN(I)),I=1,NPAR)
+      WRITE(8,1001) F0,(SU0(IVN(I)),I=1,NPAR)
+      WRITE(8,1001) 1.00000001*F0,(SU0(IVN(I)),I=1,NPAR)
         close(8)
 
         ac2=1.-(.25) !**(1./float(npar)) !1-target acceptance rate
@@ -101,7 +101,7 @@ c     start plotting
 
 C --- start M chain ------------------------------------------------------------
 
-	SUM1=0.D0; SUM2=0.D0; SUM3=0.D0; N_ACCEPT2=0; N_TRIED=0; Y=SU0
+      SUM1=0.D0; SUM2=0.D0; SUM3=0.D0; N_ACCEPT2=0; N_TRIED=0; Y=SU0
         SM=0.D0; C_SUM=0.D0
 
         ACC=1.
@@ -110,7 +110,7 @@ C --- start M chain ------------------------------------------------------------
         SU00=SU0
         DO I=1,NPAR
 
-	DH=DI(I)/2.d0; ACC_P1=0.; ACC_P2=0.
+      DH=DI(I)/2.d0; ACC_P1=0.; ACC_P2=0.
 
         IVI=IVN(I)
  3      SU(IVI)=SU0(IVI)+GENUNF(real(-DH),real(DH)) !proposal
@@ -118,7 +118,7 @@ C --- start M chain ------------------------------------------------------------
         IF(SU(IVI).LE.S1(IVI)) GOTO 4 !these are rejected
         IF(SU(IVI).GE.S2(IVI)) GOTO 4
 
-	CALL FUNC(SU,NDIM,FP); NCT=NCT+1
+      CALL FUNC(SU,NDIM,FP); NCT=NCT+1
         IF(FP.EQ.nan .or. FP.EQ.-nan) GOTO 4
         IF(FP.EQ.inf .or. FP.EQ.-inf) GOTO 4
         
@@ -128,20 +128,20 @@ C --- start M chain ------------------------------------------------------------
         N_TRIED(I)=N_TRIED(I)+1
 
  4      IF(ACC_P1.EQ.1.D0) THEN
-	 SU0(IVI)=SU(IVI); F0=FP
-	 n_accept2=n_accept2+1
+       SU0(IVI)=SU(IVI); F0=FP
+       n_accept2=n_accept2+1
          N_ACCEPTED(I)=N_ACCEPTED(I)+1
          SU0_MC=SU0 !update the best likelihood estimate (ble)
          F_MIN=FP
          GOTO 3
-	ELSE
-	 UD01=genunf(0.,1.) !RAN2(ISEED)
-	 IF(UD01.LE.ACC_P1) THEN
-	  SU0(IVI)=SU(IVI); F0=FP
-	  n_accept2=n_accept2+1
+      ELSE
+       UD01=genunf(0.,1.) !RAN2(ISEED)
+       IF(UD01.LE.ACC_P1) THEN
+        SU0(IVI)=SU(IVI); F0=FP
+        n_accept2=n_accept2+1
          N_ACCEPTED(I)=N_ACCEPTED(I)+1
-	 ENDIF
-	ENDIF
+       ENDIF
+      ENDIF
 
         ENDDO
 
@@ -151,28 +151,30 @@ c ---   outputs
 
 c ---   update proposal width array DI every 100 updates for acceptance near 50 %
 
-        WRITE(6,'("Parameter",t12,"no. tried",t24,"no. accepted",t38,"ratio")')
+        WRITE(6,'("Parameter",t12,"no. tried",t24,'//
+     $          '"no. accepted",t38,"ratio")')
         DO I=1,NPAR
         FREQ=FLOAT(N_ACCEPTED(I))/FLOAT(N_TRIED(I))
-        WRITE(6,'(I5,T12,I5,T24,I5,T36,F6.2)') I,N_TRIED(I),N_ACCEPTED(I),FREQ
+        WRITE(6,'(I5,T12,I5,T24,I5,T36,F6.2)')
+     $          I,N_TRIED(I),N_ACCEPTED(I),FREQ
 
-	DI(I)=MAX(1.d-10,DI(I)*(FREQ+.5)**2)
+      DI(I)=MAX(1.d-10,DI(I)*(FREQ+.5)**2)
         ENDDO
-	N_ACCEPTED=0; N_TRIED=0  !resetting the acceptance counter to zero
+      N_ACCEPTED=0; N_TRIED=0  !resetting the acceptance counter to zero
 
         WRITE(6,1000) N,N_ACCEPT2,FP,(SU0(IVN(I)),I=1,NPAR)
         N_ACCEPT2=0
 
         ENDIF
-	
+      
         OPEN(8,FILE='global.out',STATUS='unknown',POSITION='append')
-	WRITE(8,1001) F0,(SU0(IVN(I)),I=1,NPAR)
+      WRITE(8,1001) F0,(SU0(IVN(I)),I=1,NPAR)
         CLOSE(8)
 
 c     --- monitor sample covariance 
 
          DO I=1,NPAR
-	  SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
+        SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
           THETA(I)=SM(I)/FLOAT(N)  !new mean
          ENDDO
 
@@ -182,11 +184,11 @@ c     --- monitor sample covariance
            IVJ=IVN(J)
           C_SUM(I,J)=C_SUM(I,J)+((SU0(IVI)-SU00(IVI))-theta(I))*
      &                          ((SU0(IVJ)-SU00(IVJ))-theta(J))
-	  ENDDO
+        ENDDO
          ENDDO
 
 
-	ENDDO !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+      ENDDO !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         MEANV(1:NPAR)=0.; COVM=C_SUM/FLOAT(MCT0) 
         SCL=2. !scale increment
@@ -214,7 +216,7 @@ c ---   now use empirical cov of increments
         ENDIF
         ENDDO
 
-	CALL FUNC(SU,NDIM,FP); NCT=NCT+1
+      CALL FUNC(SU,NDIM,FP); NCT=NCT+1
         IF(FP.EQ.nan .or. FP.EQ.-nan) GOTO 5
         IF(FP.EQ.inf .or. FP.EQ.-inf) GOTO 5
         
@@ -224,19 +226,19 @@ c ---   now use empirical cov of increments
         N_TRIED(1)=N_TRIED(1)+1
 
  5      IF(ACC_P1.EQ.1.D0) THEN
-	 SU0=SU; F0=FP
-	 n_accept2=n_accept2+1
+       SU0=SU; F0=FP
+       n_accept2=n_accept2+1
          N_ACCEPTED(1)=N_ACCEPTED(1)+1
          SU0_MC=SU0 !update the best likelihood estimate (ble)
          F_MIN=FP
-	ELSE
-	 UD01=genunf(0.,1.) !RAN2(ISEED)
-	 IF(UD01.LE.ACC_P1) THEN
-	  SU0=SU; F0=FP
-	  n_accept2=n_accept2+1
+      ELSE
+       UD01=genunf(0.,1.) !RAN2(ISEED)
+       IF(UD01.LE.ACC_P1) THEN
+        SU0=SU; F0=FP
+        n_accept2=n_accept2+1
          N_ACCEPTED(1)=N_ACCEPTED(1)+1
-	 ENDIF
-	ENDIF
+       ENDIF
+      ENDIF
 
 c ---   outputs
 
@@ -247,29 +249,29 @@ c ---   update COVM scale SCL every 100 cycles for acceptance near 50 %
         WRITE(6,'("no. tried",t12,"no. accepted",t26,"ratio")')
         FREQ=FLOAT(N_ACCEPTED(1))/FLOAT(N_TRIED(1))
         WRITE(6,'(I5,T12,I5,T24,F6.2)') N_TRIED(1),N_ACCEPTED(1),FREQ
-	SCL=SCL*(FREQ+.75)**2
-	N_ACCEPTED=0; N_TRIED=0  !resetting the acceptance counter to zero
+      SCL=SCL*(FREQ+.75)**2
+      N_ACCEPTED=0; N_TRIED=0  !resetting the acceptance counter to zero
 
         WRITE(6,1000) N,N_ACCEPT2,FP,(SU0(IVN(I)),I=1,NPAR)
         N_ACCEPT2=0
 
         ENDIF
-	
+      
         OPEN(8,FILE='global.out',STATUS='unknown',POSITION='append')
-	WRITE(8,1001) F0,(SU0(IVN(I)),I=1,NPAR)
+      WRITE(8,1001) F0,(SU0(IVN(I)),I=1,NPAR)
         CLOSE(8)
 
         ENDDO !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         
         F0=F_MIN; CALL FTRAFO(NDIM,X0,SU0_MC)
 
-	RETURN
+      RETURN
  1000	FORMAT(2I5,F12.4,30E12.4)
  1001	FORMAT(30E16.8)
  1002   FORMAT(I5,2E12.5,2F12.6)
  1003  FORMAT(' pram',t10,' mc mean',t19,' appr. mode',t32,'acc. rates',
      &  t46,'l. width')
-	END
+      END
 
 
 !!      EXTRINSIC(HPF_SERIAL) SUBROUTINE GNUPLOT_GLOBAL_INI(NPAR)
@@ -278,7 +280,8 @@ c ---   update COVM scale SCL every 100 cycles for acceptance near 50 %
 c --- initialize gnuplot graphics
 
 !!      INCLUDE '/usr/pgi/linux86/include/lib3f.h'
-      IDUM=SYSTEM('if [ -f global.out ]; then mv -f global.out global.out.old; fi')
+      IDUM=SYSTEM('if [ -f global.out ]; '//
+     $            'then mv -f global.out global.out.old; fi')
 
         OPEN(20,FILE='global.gnu',STATUS='UNKNOWN')
         WRITE(20,1004) 
@@ -297,4 +300,4 @@ c --- initialize gnuplot graphics
 !!      INCLUDE '/usr/pgi/linux86/include/lib3f.h'
       IDUM=SYSTEM('gnuplot global.gnu &')
       END SUBROUTINE GNUPLOT_GLOBAL
-	
+      

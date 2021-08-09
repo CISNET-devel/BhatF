@@ -186,8 +186,8 @@ C                                  ALGORITHMIC SINGULARITY
   105 IER = 129
  9000 CONTINUE
 C                                  PRINT ERROR
-	PRINT*,'SOME ERROR HAS OCCURED'
-	STOP
+      PRINT*,'SOME ERROR HAS OCCURED'
+      STOP
 C      CALL UERTST(IER,6HLEQT1C)
  9005 RETURN
       END

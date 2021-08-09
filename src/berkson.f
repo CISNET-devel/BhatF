@@ -8,7 +8,7 @@ c     imcmc=0: do mcmc (assuming no uncertainty)
 c     imcmc=1: do Berkson via mcmc
 
       SUBROUTINE BERKSON(NDIM,NPAR,NCT,X0,F0,MEANV,COVM,X)
-	
+      
       IMPLICIT REAL*8 (A-H,O-Z)
       
       PARAMETER(NMAX=100, XINF=16.,NSAMPLE=4000,NDOSE=20)
@@ -76,7 +76,7 @@ c      READ(5,*) DSC
 
       PRINT*,'record every mth cycle:'
       READ(5,*) mth
-	
+      
       PRINT*,'ID, iseed1, iseed2:'
       READ(5,*) id,iseed1,iseed2
         
@@ -98,7 +98,8 @@ c      READ(5,*) DSC
 
       
       if(covm(1,1) .ne. 0.) then
-         print*,'already have COVM, will directly procede to pilot run 2'
+         print*,'already have COVM, '//
+     $        'will directly procede to pilot run 2'
          print 999
          sm=0.
          goto 75
@@ -106,7 +107,7 @@ c      READ(5,*) DSC
 
 c ---  compute likelihood based covariance from observed information matrix 
 
-	DEL(1:NPAR)=.001d0  !perhaps use dstep
+      DEL(1:NPAR)=.001d0  !perhaps use dstep
         MEANV(1:NPAR)=0.
 
  	CALL HESSIAN(NPAR,NDIM,IVN,X0,Y,DF,DDF,W,Z,NCT)
@@ -120,8 +121,8 @@ c	 PRINT 1000
            BIDY(I,I)=1.D0
         ENDDO
 
-	IERR=0
-	CALL AXEB(DDF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IERR)
+      IERR=0
+      CALL AXEB(DDF,NPAR,NMAX,BIDY,NPAR,NMAX,0,WAREA,IERR)
 
         COVM=.5*BIDY  !use a progressive algorithm for adjusting scale
 
@@ -145,19 +146,19 @@ c --- use multivariate normal now
 c --- compute proposal x' (=y). If unacceptable, goto 4  
 
         X00=X0; Y=X0
-	DO I=1,NPAR
-	Y(IVN(I))=X0(IVN(I))+1.*X(I)
-	IF(ABS(Y(IVN(I))).GT.XINF) THEN
+      DO I=1,NPAR
+      Y(IVN(I))=X0(IVN(I))+1.*X(I)
+      IF(ABS(Y(IVN(I))).GT.XINF) THEN
            print*,'mcmc close to boundary, move rejected!',ivn(i)
            GOTO 4
         ENDIF  
-	ENDDO
+      ENDDO
 
 c ---   get likelihood 
 
-	IERR=0
+      IERR=0
         CALL BTRAFO(NDIM,Y,SU)
-	CALL FUNC(SU,NDIM,FP); NCT=NCT+1
+      CALL FUNC(SU,NDIM,FP); NCT=NCT+1
 
 c --- boundary checks from within func
 
@@ -167,28 +168,29 @@ C ---	R ratio
 
         ACC_P=MIN(1.D0,DEXP((-FP+F0)))
  4	IF(ACC_P.EQ.1.D0) THEN
-	 X0=Y; F0=FP; n_acc=n_acc+1
-	ELSE
-	 UD01=GENUNF(0.,1.) !RAN2(ISEED)
-	 IF(UD01.LE.ACC_P) THEN
-	   X0=Y; F0=FP; n_acc=n_acc+1
-	 ENDIF
-	ENDIF
+       X0=Y; F0=FP; n_acc=n_acc+1
+      ELSE
+       UD01=GENUNF(0.,1.) !RAN2(ISEED)
+       IF(UD01.LE.ACC_P) THEN
+         X0=Y; F0=FP; n_acc=n_acc+1
+       ENDIF
+      ENDIF
 
         CALL BTRAFO(NDIM,X0,SU0)
 
 c ---------------------------------------------
 
         IF(MOD(N,100).EQ.0) THEN
-         WRITE(6,1007) N,N_ACC,N_ACC_SIGMA,N_ACC_LAMBDA,F0,(SU0(IVN(I)),I=1,NPAR)
-	 N_ACC=0  !resetting the acceptance counter to zero
+         WRITE(6,1007) N,N_ACC,N_ACC_SIGMA,N_ACC_LAMBDA,F0,
+     $                 (SU0(IVN(I)),I=1,NPAR)
+       N_ACC=0  !resetting the acceptance counter to zero
         ENDIF
-	
+      
         CALL BTRAFO(NDIM,X00,SU00)
         CALL FTRAFO(NDIM,X0,SU0)
 
          DO I=1,NPAR
-	  SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
+        SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
           THETA(I)=SM(I)/FLOAT(N)  !new mean
          ENDDO
 
@@ -198,28 +200,28 @@ c ---------------------------------------------
            IVJ=IVN(J)
            C_SUM(I,J)=C_SUM(I,J)+((SU0(IVI)-SU00(IVI))-THETA(I))*
      &                          ((SU0(IVJ)-SU00(IVJ))-THETA(J))
-	  ENDDO
+        ENDDO
          ENDDO
 
          ENDDO !n     end of 1. training run
-	 PRINT 999
+       PRINT 999
 
          SM=0.D0; COVM=C_SUM/FLOAT(MCT0) 
 
  75      DO I=1,NPAR
-	  PRINT 9050,(COVM(I,J)/SQRT(COVM(I,I))/
+        PRINT 9050,(COVM(I,J)/SQRT(COVM(I,I))/
      &   SQRT(COVM(J,J)),J=1,NPAR)
          ENDDO
           
 C ---	get eigenvalues and eigenvectors of covariance matrix
 
-	NRC=NPAR; IERR=0
+      NRC=NPAR; IERR=0
         CALL RS(NMAX,NRC,C_SUM,W,0,S,fwork1,fwork2,ie)
-	PRINT*,'RS error: ',ie
+      PRINT*,'RS error: ',ie
 
-	PRINT 999
-	PRINT 9040,(W(I),I=1,NPAR)
-	PRINT 999
+      PRINT 999
+      PRINT 9040,(W(I),I=1,NPAR)
+      PRINT 999
 
 c --- initialize multivariate normal sampler (on original scale)
 
@@ -227,12 +229,12 @@ c --- initialize multivariate normal sampler (on original scale)
 
 c ---  procede with Q sampling from multivariate normal with COVM
 
-	MC_Smax=2; MC_S=0; N_ACC=0; N_ACC_SIGMA=0; N_ACC_LAMBDA=0
+      MC_Smax=2; MC_S=0; N_ACC=0; N_ACC_SIGMA=0; N_ACC_LAMBDA=0
 
 c -------------------------------------------------------------------------------
-	print 999
-	print*,'second pilot chain (includes Berkson error)'
-	print 999
+      print 999
+      print*,'second pilot chain (includes Berkson error)'
+      print 999
 
 c ---  generate d_i's (called lambda, using recorded doses) 
 
@@ -247,14 +249,16 @@ c ---  generate d_i's (called lambda, using recorded doses)
         DO K=1,NOBS
            DO L=1,NDOSE
            IF(DOSE(L,K) .NE. 0.) THEN
-           LAMBDA(L,K)=DOSE(L,K)*DEXP(-0.5*SIG0*SIG0)*DEXP(SIG0*GENNOR(0.,1.))
+           LAMBDA(L,K)=DOSE(L,K)*DEXP(-0.5*SIG0*SIG0)*
+     $                  DEXP(SIG0*GENNOR(0.,1.))
            ENDIF
            ENDDO
         ENDDO
 c        print*,lambda(1:5,1)
    
-	CALL FUNC(SU0,NDIM,F0); NCT=NCT+1 !fills lkh's
-        print*,'first (imcmc=1) function call, check: ',F0,sum(lkh(1:nobs))
+      CALL FUNC(SU0,NDIM,F0); NCT=NCT+1 !fills lkh's
+        print*,'first (imcmc=1) function call, check: ',F0,
+     $         sum(lkh(1:nobs))
 
         OPEN(8,FILE='mcmc.out',STATUS='unknown',POSITION='append')
         WRITE(8,1001) ID,F0,(SU0(IVN(I)),I=1,NPAR),SIG0
@@ -287,10 +291,10 @@ c     all parameters that are 'not stopped' are used
 c     compute proposal x' (=y). If unacceptable, goto 14  
 
         SU00=SU0; Y=SU0
-	DO I=1,NPAR
-	Y(IVN(I))=SU0(IVN(I))+scl*X(I)
+      DO I=1,NPAR
+      Y(IVN(I))=SU0(IVN(I))+scl*X(I)
 
-	 IF(Y(IVN(I)).LT.S1(IVN(I))) THEN
+       IF(Y(IVN(I)).LT.S1(IVN(I))) THEN
            PRINT*,'down move rejected!',IVN(i)
            GOTO 14
          ELSEIF(Y(IVN(I)).GT.S2(IVN(I))) THEN
@@ -298,9 +302,9 @@ c     compute proposal x' (=y). If unacceptable, goto 14
            GOTO 14
          ENDIF
 
-	ENDDO
+      ENDDO
         
-	CALL FUNC(Y,NDIM,FP); NCT=NCT+1  ! uses lambda
+      CALL FUNC(Y,NDIM,FP); NCT=NCT+1  ! uses lambda
 
 c --- boundary checks from within subroutine func()
         IF(IERR.EQ.1) GOTO 14 !checks on positivity problems etc.
@@ -310,12 +314,12 @@ C ---	R ratio ---------------------------------------------------
         ACC_P=MIN(1.D0,DEXP((-FP+F0)))
 
  14	IF(ACC_P.EQ.1.D0) THEN
-	 SU0=Y; F0=FP; lkh0=lkh; n_acc=n_acc+1
-	ELSE
-	 IF(genunf(0.,1.).LE.ACC_P) THEN
-	   SU0=Y; F0=FP; lkh0=lkh; n_acc=n_acc+1
-	 ENDIF
-	ENDIF
+       SU0=Y; F0=FP; lkh0=lkh; n_acc=n_acc+1
+      ELSE
+       IF(genunf(0.,1.).LE.ACC_P) THEN
+         SU0=Y; F0=FP; lkh0=lkh; n_acc=n_acc+1
+       ENDIF
+      ENDIF
 
 c ---  step 2: generate new lambda_i's (with 'Berkson doses') | theta, sigma
 
@@ -324,13 +328,14 @@ c ---  step 2: generate new lambda_i's (with 'Berkson doses') | theta, sigma
         DO K=1,NOBS
            DO L=1,NDOSE
            IF(DOSE(L,K) .NE. 0.) THEN
-           LAMBDA(L,K)=DOSE(L,K)*DEXP(-0.5*SIG0*SIG0)*DEXP(SIG0*GENNOR(0.,1.))
+           LAMBDA(L,K)=DOSE(L,K)*DEXP(-0.5*SIG0*SIG0)*
+     $                  DEXP(SIG0*GENNOR(0.,1.))
            ENDIF
            ENDDO
         ENDDO
 
 c --- obtain indiv.likelihood contrib. LKH
-	CALL FUNC(SU0,NDIM,FDUM); NCT=NCT+1 
+      CALL FUNC(SU0,NDIM,FDUM); NCT=NCT+1 
 
 c --- use Metropolis-Hastings here to accept or reject the lambda_i's 
 c     individual by individual, for the parameter block (model parameters)
@@ -343,14 +348,14 @@ c     individual by individual, for the parameter block (model parameters)
           LAMBDA0(1:NDOSE,K)=LAMBDA(1:NDOSE,K)
           LKH0(K)=LKH(K)
           N_ACC_LAMBDA=N_ACC_LAMBDA+1
-	 ELSE
+       ELSE
 
-	  IF(GENUNF(0.,1.).LE.ACC_P) THEN
+        IF(GENUNF(0.,1.).LE.ACC_P) THEN
            LAMBDA0(1:NDOSE,K)=LAMBDA(1:NDOSE,K)
            LKH0(K)=LKH(K)
            N_ACC_LAMBDA=N_ACC_LAMBDA+1
-	  ENDIF
-	 ENDIF
+        ENDIF
+       ENDIF
         ENDDO
         LAMBDA=LAMBDA0; LKH=LKH0
 
@@ -378,8 +383,8 @@ c ---  step3: sample eta(=1/2/sig^2) from gamma distr.
         
         IF(ACC_P.EQ.1.D0) THEN
            SIG0=SIGP; N_ACC_SIGMA=N_ACC_SIGMA+1
-	 ELSE
-	  IF(GENUNF(0.,1.).LE.ACC_P) THEN
+       ELSE
+        IF(GENUNF(0.,1.).LE.ACC_P) THEN
              SIG0=SIGP; N_ACC_SIGMA=N_ACC_SIGMA+1
           ENDIF
         ENDIF
@@ -390,24 +395,25 @@ c -----------------------------------------------------------------
         NCMC=NCMC+1
 
         if(mod(n,100).eq.0) then
-        WRITE(6,1007) N,N_ACC,N_ACC_SIGMA,N_ACC_LAMBDA,F0,(SU0(IVN(I)),I=1,NPAR),SIG0
-	N_ACC=0; N_ACC_SIGMA=0; N_ACC_LAMBDA=0  !resetting the acceptance counter to zero
+        WRITE(6,1007) N,N_ACC,N_ACC_SIGMA,N_ACC_LAMBDA,F0,
+     $                (SU0(IVN(I)),I=1,NPAR),SIG0
+      N_ACC=0; N_ACC_SIGMA=0; N_ACC_LAMBDA=0  !resetting the acceptance counter to zero
         endif
-	
+      
 c --- write
 
-	if(mod(n,mth).eq.0) then
+      if(mod(n,mth).eq.0) then
         OPEN(8,FILE='mcmc.out',STATUS='unknown',POSITION='append')
-	WRITE(8,1001) ID,F0,(SU0(IVN(I)),I=1,NPAR),SIG0
+      WRITE(8,1001) ID,F0,(SU0(IVN(I)),I=1,NPAR),SIG0
         close(8)
-	endif
+      endif
 
 c --- monitor covariance of 'increment' distribution
 
         IF(MC_S.LT.MC_Smax) THEN
 
          DO I=1,NPAR
-	  SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
+        SM(I)=SM(I)+(SU0(IVN(I))-SU00(IVN(I)))
           THETA(I)=SM(I)/FLOAT(N)  !new mean
          ENDDO
 
@@ -417,22 +423,22 @@ c --- monitor covariance of 'increment' distribution
            IVJ=IVN(J)
           C_SUM(I,J)=C_SUM(I,J)+((SU0(IVI)-SU00(IVI))-theta(I))*
      &                          ((SU0(IVJ)-SU00(IVJ))-theta(J))
-	  ENDDO
+        ENDDO
          ENDDO
 
         ENDIF
 c ---------------------------------------
-	ENDDO !n
+      ENDDO !n
 
-	MC_S=MC_S+1
+      MC_S=MC_S+1
 
         IF(MC_S.LT.MC_Smax) THEN
 
-	 PRINT 999
+       PRINT 999
          SM=0.d0; COVM=C_SUM/FLOAT(MC1) 
 
          DO I=1,NPAR
-	  PRINT 9050,(COVM(I,J)/SQRT(COVM(I,I))/
+        PRINT 9050,(COVM(I,J)/SQRT(COVM(I,I))/
      &   SQRT(COVM(J,J)),J=1,NPAR)
          ENDDO
           
@@ -441,16 +447,16 @@ c --- re-initialize multivariate normal sampler
         CALL SETGMN(MEANV,COVM,NPAR,PARM)
 
         ENDIF
-	
-	print 999
-	print*,'chain: ',MC_S
-	print 999
+      
+      print 999
+      print*,'chain: ',MC_S
+      print 999
 
-	MC1=MC
+      MC1=MC
 
 c --- continue or exit
 
-	IF(MC_S.LT.MC_Smax) THEN
+      IF(MC_S.LT.MC_Smax) THEN
 
 c --- allow for change in scale
         print*,'scale for m.v. sampler (recommend 2.):'
@@ -471,7 +477,7 @@ c --- allow for change in scale
 
         CALL SYSTEM('killall gnuplot')
 
-	RETURN
+      RETURN
  999    FORMAT(/)
  1000	FORMAT(I5,F12.4,30E12.4)
  1001	FORMAT(I5,30E16.8)
@@ -479,5 +485,5 @@ c --- allow for change in scale
  1007   FORMAT(4I5,F12.4,30E12.4)
  9040   FORMAT(/,' eigenvalues:  ',/,30E12.4,/)
  9050   FORMAT(30E14.6)
-	END
+      END
 
