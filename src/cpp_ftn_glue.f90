@@ -12,7 +12,7 @@ subroutine debug_print_commons()
   common /NPRODCTS/ ndim,npar,np,mp,np2,ndim2,npar2,nlm  
   common /IFLAGS/ iflag,imcmc,iboot,iseed,ierr  
 
-  write (*,*) 'DEBUG: ndim=',ndim,'npar=','npar'
+  write (*,*) 'DEBUG: ndim=',ndim,'npar=',npar
   write (*,*) 'DEBUG: labels=',labels(1:ndim)
   write (*,*) 'DEBUG: rnf=',rnf(1:ndim)
   write (*,*) 'DEBUG: ivn=',ivn(1:ndim)
