@@ -53,15 +53,12 @@ extern "C" void ftn_set_variables (const int* nvars_total,
                                    const int is_fixed[],
                                    const double x_est[],
                                    const double x_min[],
-                                   const double x_max[],
-                                   double x0[]);
+                                   const double x_max[]);
 
 
-extern "C" void migrad(const int* ndim,
-                       const int* npar,
-                       int* nfcn,
-                       double xinit[],
-                       double* ymin);
+extern "C" void ftn_migrad(int* nvars,
+                           double x_final[],
+                           double* y_final);
 
 
 extern "C"
@@ -80,9 +77,15 @@ void cpp_callback(double* f,
     std::cout << "DEBUG: cpp_callback() is returning *f=" << *f << std::endl;
 }
 
+//' call_migrad
+//'
+//' Call migrad subroutine
+//'
+//' @param vars Matrix of variables, 1 row/variable containing is_fixed,initial,estimated,min,max
+//' @export
 //[[Rcpp::export]]
 std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
-    const int nvars = vars.nrow(); // fixme: use `auto` and check for MAX_INT
+    int nvars = vars.nrow(); // fixme: use `auto` and check for MAX_INT
     if (vars.ncol()!=5) {
         throw std::runtime_error("Variable matrix should have 5 columns: "
                                  "is_fixed,initial,estimated,min,max");
@@ -99,7 +102,7 @@ std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
                    is_fixed.begin(),
                    [](double x) { return x!=0; } );
 
-    const int npar = std::count(is_fixed.begin(), is_fixed.end(), 0);
+    // const int npar = std::count(is_fixed.begin(), is_fixed.end(), 0);
 
     Rcpp::CharacterVector r_labels = rownames(vars);
     std::vector<char> f_labels(nvars*10, ' ');
@@ -107,18 +110,17 @@ std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
         std::copy(r_labels[i].begin(), r_labels[i].end(), &f_labels[i*10]);
     }
 
-    std::vector<double> x0(nvars+1);
-    
     std::cout << "DEBUG: calling ftn_set_variables()" << std::endl;
-    ftn_set_variables(&nvars, f_labels.data(), x_ini.data(), is_fixed.data(), x_est.data(), x_min.data(), x_max.data(), x0.data()+1);
+    ftn_set_variables(&nvars, f_labels.data(), x_ini.data(), is_fixed.data(), x_est.data(), x_min.data(), x_max.data());
 
 
-    double ymin=0;
-    int nfcn=0;
-    std::cout << "DEBUG: calling migrad()" << std::endl;
-    migrad(&nvars, &npar, &nfcn, x0.data()+1, &ymin);
-    std::cout << "DEBUG: back from migrad(), ymin=" << ymin <<  std::endl;
+    std::vector<double> yx_final(nvars+1);
+    
+    std::cout << "DEBUG: calling ftn_migrad()" << std::endl;
+    ftn_migrad(&nvars, yx_final.data()+1, &yx_final[0]);
+    
+    std::cout << "DEBUG: back from migrad(), ymin=" << yx_final[0] <<  std::endl;
 
-    x0[0]=ymin;
-    return x0;
+    std::cout << "DEBUG: back from cpp_callback()" << std::endl;
+    return yx_final;
 }

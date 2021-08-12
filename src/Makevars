@@ -1,0 +1,66 @@
+#.PHONY: all
+
+#all: $(SHLIB)
+
+OBJECTS=\
+ RcppExports.o \
+ call_migrad.o \
+ \
+ hessian.o\
+ newton.o\
+ simplex.o\
+ migrad.o\
+ dqstep.o\
+ mcmc.het-gam2.o\
+ mcmc.het-lnorm2.o\
+ berkson.o\
+ global.o\
+ plkhci.o\
+ ftrafo.o\
+ btrafo.o\
+ ran2.o\
+ randgs.o\
+ \
+ axeb.o rs.o\
+ \
+ alngam.o\
+ \
+ cpp_ftn_glue.o\
+ \
+ ranlib/advnst.o\
+ ranlib/genbet.o\
+ ranlib/genchi.o\
+ ranlib/genexp.o\
+ ranlib/genf.o\
+ ranlib/gengam.o\
+ ranlib/genmn.o\
+ ranlib/genmul.o\
+ ranlib/gennch.o\
+ ranlib/gennf.o\
+ ranlib/gennor.o\
+ ranlib/genprm.o\
+ ranlib/genunf.o\
+ ranlib/getcgn.o\
+ ranlib/getsd.o\
+ ranlib/ignbin.o\
+ ranlib/ignlgi.o\
+ ranlib/ignnbn.o\
+ ranlib/ignpoi.o\
+ ranlib/ignuin.o\
+ ranlib/initgn.o\
+ ranlib/inrgcm.o\
+ ranlib/lennob.o\
+ ranlib/mltmod.o\
+ ranlib/phrtsd.o\
+ ranlib/qrgnin.o\
+ ranlib/ranf.o\
+ ranlib/sdot.o\
+ ranlib/setall.o\
+ ranlib/setant.o\
+ ranlib/setgmn.o\
+ ranlib/setsd.o\
+ ranlib/sexpo.o\
+ ranlib/sgamma.o\
+ ranlib/snorm.o\
+ ranlib/spofa.o
+

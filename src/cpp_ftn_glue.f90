@@ -22,13 +22,12 @@ subroutine debug_print_commons()
   write (*,*) 'DEBUG: s2=',s2(1:ndim)
 end subroutine debug_print_commons
 
-subroutine set_variables (nvars_total, x_labels, x_ini, is_fixed, x_est, x_min, x_max, x0) bind(c,name="ftn_set_variables")
+subroutine set_variables (nvars_total, x_labels, x_ini, is_fixed, x_est, x_min, x_max) bind(c,name="ftn_set_variables")
   implicit none 
   integer, intent(in) :: nvars_total
   real*8, intent(in) :: x_ini(nvars_total), x_est(nvars_total), x_min(nvars_total), x_max(nvars_total)
   character*1, intent(in) :: x_labels(10,nvars_total)
   integer, intent(in) :: is_fixed(nvars_total)
-  integer, intent(out) :: x0(nvars_total)
 
   integer, parameter :: nmax=100
   character*1 labels(10,nmax) ! note: storage-conforming to char*10(nmax)
@@ -68,26 +67,14 @@ subroutine set_variables (nvars_total, x_labels, x_ini, is_fixed, x_est, x_min, 
   npar2=npar*npar
   nlm=(npar*npar+3*npar)/2
 
-  call debug_print_commons()
-  
-  ! parameter transformation
-  call ftrafo(ndim,x0,su)
-
-  !xs0 = x0
-  !nct=0    ! ... counts no. of FUNC calls
-
-  ! first function call 
   iflag=1
   imcmc=0
   iboot=0
-  !covm=0.
-  
-  !call func(su,ndim,f_start)
-  !nct=nct+1
 
-  !PRINT*,'first call with function value: ',F_START
-  !IFLAG=2   
+  call debug_print_commons()
+  
 end subroutine set_variables
+
 
 subroutine func(u,npar,f)
   implicit none
@@ -110,6 +97,48 @@ subroutine func(u,npar,f)
 
   call cpp_callback(f, iflag, u, npar)
 end subroutine func
+
+
+!!! ***STOPPED HERE!*** Calls migrad with transformed variables
+subroutine ftn_migrad(nvar, x_final, f_final)  bind(c,name="ftn_migrad")
+  implicit none
+  ! Arguments:
+  integer, intent(inout) :: nvar ! in:how many variables allocated; out:how many variables valid (not more than allocated)
+  double precision, intent(out) :: x_final(nvar), f_final
+  ! Common blocks:
+  integer, parameter :: nmax=100
+  character*10 labels(nmax)
+  character rnf(nmax)
+  integer ivn(nmax)
+  real*8 su, se, s1, s2
+  integer ndim,npar,np,mp,np2,ndim2,npar2,nlm
+  integer iflag,imcmc,iboot,iseed,ierr
+  common /LABELS/ labels,rnf,ivn
+  common /BOUNDS/ su(nmax),se(nmax),s1(nmax),s2(nmax)
+  common /NPRODCTS/ ndim,npar,np,mp,np2,ndim2,npar2,nlm  
+  common /IFLAGS/ iflag,imcmc,iboot,iseed,ierr
+  ! Local vars:
+  integer nct
+  double precision :: x0(nmax)
+
+  ! parameter transformation
+  call ftrafo(ndim,x0,su)
+  ! First function call (FIXME: is it really needed?)
+  iflag = 1
+  call func(su,ndim,f_final)
+
+  nct = 1
+  iflag = 2 
+  call migrad(ndim, npar, nct, x0, f_final)
+
+  call btrafo(ndim, x0, su)
+  iflag = 3 ! FIXME: the original code is not consistent in this
+  call func(su,ndim,f_final)
+
+  if (nvar>ndim) nvar=ndim
+  x_final(1:nvar) = su(1:nvar)
+
+end subroutine ftn_migrad
 
 
 subroutine gnuplot_ini()
