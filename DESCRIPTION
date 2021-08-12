@@ -1,0 +1,19 @@
+Package: BhatF
+Title: R bindings to BHat Fortran Code
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Alexander",
+           family = "Gaenko",
+           role = c("aut", "cre"),
+           email = "galexv@umich.edu",
+           comment = structure("0000-0002-1901-0394", .Names = "ORCID"))
+Description: This package provides R bindings to the Bhat program written in Fortran
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+LinkingTo: 
+    Rcpp
+Imports: 
+    Rcpp

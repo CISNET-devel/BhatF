@@ -1,0 +1,7 @@
+^\.
+^Makefile$
+^unneeded/
+^src/README$
+^src/LICENSE$
+^src/main.f$
+^LICENSE\.md$
