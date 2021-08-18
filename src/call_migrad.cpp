@@ -65,7 +65,7 @@ extern "C"
 void cpp_callback(double* f,
                   const int* /*iflag*/, const double u[], const int* npar)
 {
-    std::cout << "DEBUG: cpp_callback() is called." << std::endl;
+    // std::cout << "DEBUG: cpp_callback() is called." << std::endl;
     const auto sz = sizeof(data1)/sizeof(*data1);
     assert((sz==sizeof(data2)/sizeof(*data2)) && "Arrays must have the same size");
     Rcpp::NumericVector d1(data1, data1+sz);
@@ -74,7 +74,7 @@ void cpp_callback(double* f,
     Rcpp::NumericVector uu(u, u + *npar);
     Rcpp::NumericVector g = uu(0)*(1+d1*uu(1)*(1-uu(2)*d1));
     *f = sum(g - d2*log(g));
-    std::cout << "DEBUG: cpp_callback() is returning *f=" << *f << std::endl;
+    // std::cout << "DEBUG: cpp_callback() is returning *f=" << *f << std::endl;
 }
 
 //' call_migrad
@@ -110,17 +110,17 @@ std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
         std::copy(r_labels[i].begin(), r_labels[i].end(), &f_labels[i*10]);
     }
 
-    std::cout << "DEBUG: calling ftn_set_variables()" << std::endl;
+    // std::cout << "DEBUG: calling ftn_set_variables()" << std::endl;
     ftn_set_variables(&nvars, f_labels.data(), x_ini.data(), is_fixed.data(), x_est.data(), x_min.data(), x_max.data());
 
 
     std::vector<double> yx_final(nvars+1);
     
-    std::cout << "DEBUG: calling ftn_migrad()" << std::endl;
+    // std::cout << "DEBUG: calling ftn_migrad()" << std::endl;
     ftn_migrad(&nvars, yx_final.data()+1, &yx_final[0]);
     
-    std::cout << "DEBUG: back from migrad(), ymin=" << yx_final[0] <<  std::endl;
+    // std::cout << "DEBUG: back from migrad(), ymin=" << yx_final[0] <<  std::endl;
 
-    std::cout << "DEBUG: back from cpp_callback()" << std::endl;
+    // std::cout << "DEBUG: back from cpp_callback()" << std::endl;
     return yx_final;
 }
