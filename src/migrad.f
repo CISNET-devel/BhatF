@@ -3,7 +3,8 @@
       IMPLICIT REAL*8 (A-H,O-Z)
 
       PARAMETER(NMAX=100,SENS=2.,XINF=32.)
-      CHARACTER*28 STAMP,STATUS
+C     CHARACTER*28 STAMP,STATUS
+      CHARACTER*28 STATUS
       CHARACTER*10 LABELS(NMAX)
       CHARACTER    RNF(NMAX)
       CHARACTER*10 ANSWER
@@ -29,16 +30,6 @@ CC        REF. -- FLETCHER, COMP.J. 13,317 (1970)   "SWITCHING METHOD"
          CHARACTER(LEN=*) COMMANDA 
          END FUNCTION SYSTEM 
       END INTERFACE
-
-c -----------------------------------------------------------------
-!!      INCLUDE '/usr/pgi/linux86/include/lib3f.h'
-
-!!	INTERFACE
-!! 	 EXTRINSIC(HPF_SERIAL) SUBROUTINE BTIME(STAMP_)
-!!          CHARACTER*28, INTENT(OUT) :: STAMP_
-!! 	 END SUBROUTINE BTIME
-!! 	END INTERFACE
-c -----------------------------------------------------------------
 
       CALL BTRAFO(NDIM,X,SU)
       CALL FUNC(SU,NDIM,AMIN); NFCN = NFCN + 1
@@ -420,8 +411,9 @@ C      IF(ICHAR.EQ.'Y') CALL MATOUT(0.0D0, 1)
 
 c       GRADIENT SEARCH FINAL OUTPUT:
 
-      CALL BTIME(STAMP)
-        WRITE(6,9009) STAMP,STATUS,AMIN
+C      CALL BTIME(STAMP)
+C        WRITE(6,9009) STAMP,STATUS,AMIN
+        WRITE(6,9009) STATUS,AMIN
         WRITE(6,9010)
         J=1
         IF(IVN(J).EQ.1) THEN
@@ -442,7 +434,8 @@ c       GRADIENT SEARCH FINAL OUTPUT:
       
         OPEN(23,file='bhat.final',status='unknown')
 
-        WRITE(23,9009) STAMP,STATUS,AMIN
+C        WRITE(23,9009) STAMP,STATUS,AMIN
+        WRITE(23,9009) STATUS,AMIN
         WRITE(23,9010)
         IV1=IVN(1)
         WRITE(23,9020) ITER,AMIN,LABELS(IV1),SU(IV1),GS(1),G2(1),NFCN
@@ -461,7 +454,7 @@ c       GRADIENT SEARCH FINAL OUTPUT:
       
       RETURN
   450 FORMAT(/,'START DAVIDON-FLETCHER-POWELL ALGORITHM',/)
-  460 FORMAT(A1)
+C  460 FORMAT(A1)
   470 FORMAT (/,'CONVERGENCE CRITERIA: ',
      +    ' --  ESTIMATED DISTANCE TO MINIMUM (EDM) .LT.',E9.2,/,
      +22X,' --                               OR EDM .LT.',E9.2,/,
@@ -471,17 +464,18 @@ c       GRADIENT SEARCH FINAL OUTPUT:
   511 FORMAT (/,'GRADIENT SEARCH NONCONVERGENT - STOP')
   520 FORMAT ('COVARIANCE MATRIX IS NOT POSITIVE-DEFINITE')
   650 FORMAT ('GRADIENT SEARCH FAILS TO FIND IMPROVEMENT')
-5000  FORMAT(I6,30E18.8)
+C 5000  FORMAT(I6,30E18.8)
 6000  FORMAT(F15.5,30E18.8)
-7000  FORMAT(/,'DO YOU WANT GRAPHICAL INFORMATION (Y/N) ')
-7010  FORMAT(A10)
-8000  FORMAT('plot "tmp_" using 1:3 title "',a5,'" w l ',
-     1 10(a17,i5,a8,a5,'"',a4))
-8001  FORMAT('"tmp_" using 1:',i5,' w l')
-8002  FORMAT('pause -1')
-8010  FORMAT(/,'GRAPHING  LABELS:   ',2A10)
-8020  FORMAT(i5,5x,a5)
-9009  FORMAT(/,'BHAT RUN: ',A28,T42,'STATUS: ',A15,T67,'VALUE:',E16.8)
+C 7000  FORMAT(/,'DO YOU WANT GRAPHICAL INFORMATION (Y/N) ')
+C 7010  FORMAT(A10)
+C 8000  FORMAT('plot "tmp_" using 1:3 title "',a5,'" w l ',
+C     1 10(a17,i5,a8,a5,'"',a4))
+C 8001  FORMAT('"tmp_" using 1:',i5,' w l')
+C 8002  FORMAT('pause -1')
+C 8010  FORMAT(/,'GRAPHING  LABELS:   ',2A10)
+C 8020  FORMAT(i5,5x,a5)
+C 9009  FORMAT(/,'BHAT RUN: ',A28,T42,'STATUS: ',A15,T67,'VALUE:',E16.8)
+9009  FORMAT(/,'BHAT RUN STATUS: ',A15,T67,'VALUE:',E16.8)
 9010  FORMAT(/,'IT',T11,'VALUE',T18,'LBL',T26,
      & 'ESTIMATES',T41,
      & 'DERIVATIVES',T57,
@@ -494,17 +488,13 @@ c       GRADIENT SEARCH FINAL OUTPUT:
       END
 
 
-!!      EXTRINSIC(HPF_SERIAL) SUBROUTINE BTIME(STAMP)
-      SUBROUTINE BTIME(STAMP)
-       CHARACTER*28 STAMP
-
-!!      INCLUDE '/usr/pgi/linux86/include/lib3f.h'
-
-
-      IDUM=SYSTEM('date > bhat.stamp')
-      OPEN(20,file='bhat.stamp',status='unknown')
-      READ(20,202) STAMP
- 202  FORMAT(A28)
-      CLOSE(20)
-
-      END SUBROUTINE BTIME
+c$$$      SUBROUTINE BTIME(STAMP)
+c$$$       CHARACTER*28 STAMP
+c$$$
+c$$$      IDUM=SYSTEM('date > bhat.stamp')
+c$$$      OPEN(20,file='bhat.stamp',status='unknown')
+c$$$      READ(20,202) STAMP
+c$$$ 202  FORMAT(A28)
+c$$$      CLOSE(20)
+c$$$
+c$$$      END SUBROUTINE BTIME
