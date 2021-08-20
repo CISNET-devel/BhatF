@@ -141,6 +141,24 @@ subroutine ftn_migrad(nvar, x_final, f_final)  bind(c,name="ftn_migrad")
 end subroutine ftn_migrad
 
 
+subroutine logmessage(wrtbuffer, nlines)
+  ! Log the lines from `wrtbuffer` until an empty line
+  implicit none 
+  character(len=*), intent(in) :: wrtbuffer(:)
+  integer, intent(in), optional :: nlines
+  integer i, nl
+  nl = size(wrtbuffer)
+  if (present(nlines)) nl = min(nlines, nl)
+  do i=1,nl
+     if (wrtbuffer(i) .ne. ' ') then
+        write (*,*) 'DEBUG: log(',i,')='//trim(wrtbuffer(i))
+     else
+        exit
+     end if
+  end do
+end subroutine logmessage
+
+
 subroutine gnuplot_ini()
   implicit none
   write (*,*) 'DEBUG: Would have called GNUPLOT_INI here'

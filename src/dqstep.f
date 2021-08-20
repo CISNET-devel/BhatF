@@ -5,11 +5,20 @@
 
       CHARACTER*10 LABELS(NMAX)
       CHARACTER RNF(NMAX)
+      character(len=256) wrtbuffer(2)
 
       DIMENSION X(NMAX),X0(NMAX),DSTEPS(NMAX),IVN(NMAX)
       COMMON /LABELS/LABELS,RNF,IVN
       COMMON /BOUNDS/SU(NMAX),SE(NMAX),S1(NMAX),S2(NMAX)
 
+      interface
+         subroutine logmessage(msg, nlines)
+         character(len=*), intent(in) :: msg(:)
+         integer, intent(in), optional :: nlines
+         end subroutine logmessage
+      end interface
+
+      wrtbuffer(:)=' '
       STEP=.01D0; DSTEPS=.01D0
       
 ! OBTAIN REFERENCE POINT VALUE
@@ -31,7 +40,8 @@
          CALL FUNC(SU,NDIM,F2); NFCN = NFCN + 1
 
          IF(F2.EQ. nan .OR. F2.EQ.-nan) THEN
-           PRINT*,'NaNs: reducing step size ',I
+            write(wrtbuffer,*) 'NaNs: reducing step size ',I
+            call logmessage(wrtbuffer,1)
             STEPI=STEPI/10.
             GOTO 2
          ENDIF
@@ -61,12 +71,15 @@ c --- see where we end up
          CALL FUNC(SU,NDIM,F2); NFCN = NFCN + 1
 
          IF(F2.EQ. nan .OR. F2.EQ.-nan) THEN
-            PRINT*,'oops: unable to find stepsize, use default ',I
+            write(wrtbuffer,*)
+     &           'oops: unable to find stepsize, use default ',I
+            call logmessage(wrtbuffer,1)
             CYCLE
          ELSE
 
             DSTEPS(I)=XS
-            PRINT*,'DSTEP:',IVN(I),XS,(F2-F0)
+            write(wrtbuffer,*) 'DSTEP:',IVN(I),XS,(F2-F0)
+            call logmessage(wrtbuffer,1)
          ENDIF
 
        ENDDO

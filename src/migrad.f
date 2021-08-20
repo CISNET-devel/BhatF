@@ -11,6 +11,7 @@ C     CHARACTER*28 STAMP,STATUS
       CHARACTER*17 STR1
       CHARACTER*8  STR2
       CHARACTER*4  STR3
+      CHARACTER(len=256) WRTBUFFER(16) ! WARNING: max 16 lines output at a time
 
 CC        PERFORMS A LOCAL FUNCTION MINIMIZATION USING BASICALLY THE
 CC        METHOD OF DAVIDON-FLETCHER-POWELL AS MODIFIED BY FLETCHER
@@ -25,12 +26,13 @@ CC        REF. -- FLETCHER, COMP.J. 13,317 (1970)   "SWITCHING METHOD"
       COMMON /IFLAGS/INDEX,IMCMC,IBOOT,ISEED,IERR  
       DATA SLAMIN,SLAMAX,TLAMIN,TLAMAX/0.2D0, 3.0D0, 0.05D0, 6.0D0/
 
-      INTERFACE 
-         INTEGER FUNCTION SYSTEM (COMMANDA) 
-         CHARACTER(LEN=*) COMMANDA 
-         END FUNCTION SYSTEM 
-      END INTERFACE
-
+      interface
+         subroutine logmessage(msg, nlines)
+         character(len=*), intent(in) :: msg(:)
+         integer, intent(in), optional :: nlines
+         end subroutine logmessage
+      end interface
+      
       CALL BTRAFO(NDIM,X,SU)
       CALL FUNC(SU,NDIM,AMIN); NFCN = NFCN + 1
 
@@ -52,11 +54,18 @@ CC        REF. -- FLETCHER, COMP.J. 13,317 (1970)   "SWITCHING METHOD"
 
       TRACE=1.D0
       FS = AMIN
-      PRINT 450
-      IF(IBOOT.EQ.0) PRINT 470,  ROSTOP, APSI, VTEST
+      wrtbuffer(:)=' '
+      write (wrtbuffer,450)
+      call logmessage(wrtbuffer)
+      IF(IBOOT.EQ.0) then
+         WRITE(WRTBUFFER, 470)  ROSTOP, APSI, VTEST
+         call logmessage(wrtbuffer)
+      endif
+         
       GO TO 2
      
-    1 PRINT 520
+    1 WRITE(WRTBUFFER, 520)
+      call logmessage(wrtbuffer)
 
     2 NPARD = NPAR
 
@@ -92,7 +101,8 @@ C                                        . . . . . . STARTING GRADIENT
       G2(I) = (FS1 + FS2 - 2.*AMIN) / D**2
       IF (G2(I) .GT. 0.D0)  GO TO 10	
 C                                        . . . SEARCH IF G2 .LE. 0. . .
-      PRINT 520
+      WRITE(WRTBUFFER, 520)
+      call logmessage(wrtbuffer)
       NEGG2 = NEGG2 + 1
       NTRY = NTRY + 1
       IF (NTRY .GT. 6)  GO TO 230               !EGL: increased NTRY to 6
@@ -105,7 +115,8 @@ C                                        . . . SEARCH IF G2 .LE. 0. . .
     5 X(IVN(I)) = XTF + D
 
       IF(DABS(X(IVN(I))).GT.XINF) THEN
-         PRINT*,'parameter',ivn(i),' near boundary'
+         WRITE(WRTBUFFER,*)'parameter',ivn(i),' near boundary'
+         call logmessage(wrtbuffer,1)
          X(IVN(I))=SIGN(1.D0,X(IVN(I)))*XINF
       ENDIF
 
@@ -164,7 +175,8 @@ C                                        . . . GET SIGMA AND SET UP LOOP
    17 RI= RI+ V(I,J) * GS(J)
    18 SIGMA = SIGMA + GS(I) *RI * 0.5D0
       IF (SIGMA .GE. 0.D0)  GO TO 20
-      PRINT 520
+      WRITE(WRTBUFFER, 520)
+      call logmessage(wrtbuffer)
       IF (NTRY.EQ.0)  GO TO 11
       ISW2 = 0
       GO TO 230
@@ -172,13 +184,18 @@ C                                        . . . GET SIGMA AND SET UP LOOP
       ITER = 0
 
       IF(IBOOT.EQ.0) THEN
-        PRINT*,'GRADIENT SEARCH INTERMEDIATE OUTPUT:'
-        WRITE(6,9010)
+        WRITE(WRTBUFFER,*) 'GRADIENT SEARCH INTERMEDIATE OUTPUT:'
+        call logmessage(wrtbuffer,1)
+        WRITE(WRTBUFFER,9010)
+        call logmessage(wrtbuffer)
         IV1=IVN(1)
-        WRITE(6,9020) ITER,AMIN,LABELS(IV1),SU(IV1),GS(1),G2(1),NFCN
+        WRITE(WRTBUFFER,9020)
+     &       ITER,AMIN,LABELS(IV1),SU(IV1),GS(1),G2(1),NFCN
+        call logmessage(wrtbuffer)
       DO I=2,NPAR
         IVI=IVN(I)
-        WRITE(6,9030) LABELS(IVI),SU(IVI),GS(I),G2(I)
+        WRITE(WRTBUFFER,9030) LABELS(IVI),SU(IVI),GS(I),G2(I)
+        call logmessage(wrtbuffer)
       ENDDO
       ENDIF
 C                                        . . . . .  START MAIN LOOP
@@ -254,12 +271,14 @@ C                                        . QUADR INTERP USING 3 POINTS
    70 AMIN = F
       ISW2 = 2
       IF (SIGMA+FS-AMIN .LT. ROSTOP)  THEN
-         PRINT*,'convergence type 1'
+         WRITE(WRTBUFFER,*) 'convergence type 1'
+         call logmessage(wrtbuffer,1)
          GO TO 170
       ENDIF
       IF (SIGMA+RHO2+FS-AMIN .GT. APSI)  GO TO 75
       IF (TRACE .LT. VTEST)  THEN
-         PRINT*,'convergnece type 2'
+         WRITE(WRTBUFFER,*) 'convergnece type 2'
+         call logmessage(wrtbuffer,1)
          GO TO 170
       ENDIF
 
@@ -278,7 +297,7 @@ C ---  COMPUTE FIRST AND SECOND (DIAGONAL) DERIVATIVES
       IF(ISW2.EQ.0) THEN
       CALL DQSTEP(NFCN,NDIM,NPAR,X,SENS,XINF,DSTEPS)
       ELSE
-!      PRINT*,'using V() for computation of D'
+!      WRITE(WRTBUFFER,*) 'using V() for computation of D'
       ENDIF
 
       DO I= 1, NPAR
@@ -324,7 +343,8 @@ C ---  COMPUTE FIRST AND SECOND (DIAGONAL) DERIVATIVES
       IF (DELGAM .LE. 0.D0)  GO TO 105
       GO TO 107
   105 IF (SIGMA .LT. 0.1D0*ROSTOP)  THEN
-         PRINT*,'convergence crit. 3'
+         WRITE(WRTBUFFER,*) 'convergence crit. 3'
+         call logmessage(wrtbuffer,1)
          GO TO 170
       ENDIF 
       GO TO 1
@@ -353,7 +373,8 @@ C                                        .  UPDATE COVARIANCE MATRIX
       GO TO 24
 C                                        . . . . .  END MAIN LOOP
 
-  170 PRINT 500   !EGL: convergence
+  170 write(WRTBUFFER, 500)   !EGL: convergence
+      call logmessage(wrtbuffer)
 
       ISW2 = 3
       IF (MATGD .GT. 0)  THEN
@@ -367,12 +388,13 @@ C                                        . . . . .  END MAIN LOOP
          GO TO 435
       ENDIF
 
-      PRINT 180
+      write(WRTBUFFER, 180)
+      call logmessage(wrtbuffer)
   180 FORMAT ('COVARIANCE MATRIX INACCURATE.  BHAT WILL ',
      1'TRY TO RECALCULATE')
 C      CALL HESSE
 C      CALL MPRINT(1,AMIN)
-C      PRINT*,'DO YOU WANT COVARIANCEES? (Y/N)'
+C      WRITE(WRTBUFFER,*) 'DO YOU WANT COVARIANCEES? (Y/N)'
 C      READ (*,460) ICHAR
 C      IF(ICHAR.EQ.'Y') CALL MATOUT(0.0D0, 1)
 
@@ -385,25 +407,30 @@ C      IF(ICHAR.EQ.'Y') CALL MATOUT(0.0D0, 1)
  190  ISW1 = 1          !EGL: non-convergence
       GO TO 230
 
- 200  PRINT 650
+ 200  write(WRTBUFFER, 650)
+      call logmessage(wrtbuffer)
       DO 210 I= 1, NPAR
  210     X(IVN(I)) = XXS(I)
          ISW2 = 1
-         PRINT*,'SIGMA: ',SIGMA
+         WRITE(WRTBUFFER,*) 'SIGMA: ',SIGMA
+         call logmessage(wrtbuffer,1)
       IF (SIGMA .LT. ROSTOP)  THEN
-         PRINT*,'convergence type 4'
+         WRITE(WRTBUFFER,*) 'convergence type 4'
+         call logmessage(wrtbuffer,1)
          GO TO 170
       ENDIF
       IF (MATGD .GT. 0)  GO TO 2
 
- 230  PRINT 510         !EGL: retry
+ 230  write(WRTBUFFER, 510)         !EGL: retry
+      call logmessage(wrtbuffer)
 
       IF (ISW2 .LE. 1)  THEN    !EGL: non-convergence after retry
          STATUS='not converged'
          GO TO 435
       ENDIF
  
-      PRINT 511
+      write(WRTBUFFER, 511)
+      call logmessage(wrtbuffer)
          STATUS='not converged'
 
   435 CALL BTRAFO(NDIM,X,SU) 
@@ -412,23 +439,29 @@ C      IF(ICHAR.EQ.'Y') CALL MATOUT(0.0D0, 1)
 c       GRADIENT SEARCH FINAL OUTPUT:
 
 C      CALL BTIME(STAMP)
-C        WRITE(6,9009) STAMP,STATUS,AMIN
-        WRITE(6,9009) STATUS,AMIN
-        WRITE(6,9010)
+C        WRITE(WRTBUFFER,9009) STAMP,STATUS,AMIN
+        WRITE(WRTBUFFER,9009) STATUS,AMIN
+        call logmessage(wrtbuffer)
+        WRITE(WRTBUFFER,9010)
+        call logmessage(wrtbuffer)
         J=1
         IF(IVN(J).EQ.1) THEN
-          WRITE(6,9020) ITER,AMIN,LABELS(1),SU(1),GS(1),G2(1),NFCN
+          WRITE(WRTBUFFER,9020) ITER,AMIN,LABELS(1),SU(1),GS(1),G2(1),NFCN
+          call logmessage(wrtbuffer)
           J=J+1
         ELSE
-          WRITE(6,9021) ITER,AMIN,LABELS(1),SU(1),NFCN
+          WRITE(WRTBUFFER,9021) ITER,AMIN,LABELS(1),SU(1),NFCN
+          call logmessage(wrtbuffer)
         ENDIF
 
       DO I=2,NDIM
         IF(IVN(J).EQ.I) THEN
-          WRITE(6,9030) LABELS(I),SU(I),GS(J),G2(J)
+          WRITE(WRTBUFFER,9030) LABELS(I),SU(I),GS(J),G2(J)
+          call logmessage(wrtbuffer)
           J=J+1
         ELSE
-          WRITE(6,9031) LABELS(I),SU(I)
+          WRITE(WRTBUFFER,9031) LABELS(I),SU(I)
+          call logmessage(wrtbuffer)
         ENDIF
       ENDDO
       
@@ -453,19 +486,19 @@ C        WRITE(23,9009) STAMP,STATUS,AMIN
 
       
       RETURN
-  450 FORMAT(/,'START DAVIDON-FLETCHER-POWELL ALGORITHM',/)
+  450 FORMAT('START DAVIDON-FLETCHER-POWELL ALGORITHM',/)
 C  460 FORMAT(A1)
-  470 FORMAT (/,'CONVERGENCE CRITERIA: ',
+  470 FORMAT ('CONVERGENCE CRITERIA: ',
      +    ' --  ESTIMATED DISTANCE TO MINIMUM (EDM) .LT.',E9.2,/,
      +22X,' --                               OR EDM .LT.',E9.2,/,
-     +22X,' --  AND FRAC. CHANGE IN VARIANCE MATRIX .LT.',E9.2)
-  500 FORMAT (/,'GRADIENT SEARCH COMPLETED')
-  510 FORMAT ('GRADIENT SEARCH NONCONVERGENT')
-  511 FORMAT (/,'GRADIENT SEARCH NONCONVERGENT - STOP')
-  520 FORMAT ('COVARIANCE MATRIX IS NOT POSITIVE-DEFINITE')
-  650 FORMAT ('GRADIENT SEARCH FAILS TO FIND IMPROVEMENT')
+     +22X,' --  AND FRAC. CHANGE IN VARIANCE MATRIX .LT.',E9.2,/)
+  500 FORMAT ('GRADIENT SEARCH COMPLETED',/)
+  510 FORMAT ('GRADIENT SEARCH NONCONVERGENT',/)
+  511 FORMAT ('GRADIENT SEARCH NONCONVERGENT - STOP',/)
+  520 FORMAT ('COVARIANCE MATRIX IS NOT POSITIVE-DEFINITE',/)
+  650 FORMAT ('GRADIENT SEARCH FAILS TO FIND IMPROVEMENT',/)
 C 5000  FORMAT(I6,30E18.8)
-6000  FORMAT(F15.5,30E18.8)
+6000  FORMAT(F15.5,30E18.8,/)
 C 7000  FORMAT(/,'DO YOU WANT GRAPHICAL INFORMATION (Y/N) ')
 C 7010  FORMAT(A10)
 C 8000  FORMAT('plot "tmp_" using 1:3 title "',a5,'" w l ',
@@ -475,16 +508,16 @@ C 8002  FORMAT('pause -1')
 C 8010  FORMAT(/,'GRAPHING  LABELS:   ',2A10)
 C 8020  FORMAT(i5,5x,a5)
 C 9009  FORMAT(/,'BHAT RUN: ',A28,T42,'STATUS: ',A15,T67,'VALUE:',E16.8)
-9009  FORMAT(/,'BHAT RUN STATUS: ',A15,T67,'VALUE:',E16.8)
-9010  FORMAT(/,'IT',T11,'VALUE',T18,'LBL',T26,
+9009  FORMAT('BHAT RUN STATUS: ',A15,T67,'VALUE:',E16.8,/)
+9010  FORMAT('IT',T11,'VALUE',T18,'LBL',T26,
      & 'ESTIMATES',T41,
      & 'DERIVATIVES',T57,
      & 'CURVE',T67,'CALLS',/)
- 9020 FORMAT(I2,T4,E12.5,T18,A5,E12.5,T40,F12.2,E10.2,I10)
+ 9020 FORMAT(I2,T4,E12.5,T18,A5,E12.5,T40,F12.2,E10.2,I10,/)
  9021 FORMAT(I2,T4,E12.5,T18,A5,E12.5,T40,
-     $       '  .... PARAMETER FIXED',T62,I10)
- 9030 FORMAT(T18,A5,E12.5,T40,F12.2,E10.2)
- 9031 FORMAT(T18,A5,E12.5,T40,'  .... PARAMETER FIXED')
+     $       '  .... PARAMETER FIXED',T62,I10,/)
+ 9030 FORMAT(T18,A5,E12.5,T40,F12.2,E10.2,/)
+ 9031 FORMAT(T18,A5,E12.5,T40,'  .... PARAMETER FIXED',/)
       END
 
 
