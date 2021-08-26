@@ -82,7 +82,9 @@ extern "C"
 void message_callback(const char* message, const int* msglen)
 {
     std::string msg(message, *msglen);
-    Rcpp::Rcout << msg << "\n";
+    // Rcpp::Rcout << msg << "\n";
+    Rcpp::Function r_message("message");
+    r_message(msg);
 }
 
 
