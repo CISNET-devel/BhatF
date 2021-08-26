@@ -141,20 +141,40 @@ subroutine ftn_migrad(nvar, x_final, f_final)  bind(c,name="ftn_migrad")
 end subroutine ftn_migrad
 
 
+! This subroutine is needed because the C function can only accept string arrays,
+! but the Fortran code supplies fixed-length string scalars.
+! The subroutine utilizes the permitted argument association between
+! `character(len=n)` (a string variable) and `character*1(n)` (a string array)
+! (see http://www.sternwarte.uni-erlangen.de/~ai05/vorlesungen/astrocomp/f77-standard.pdf,
+!  paragraphs 15.9.3.1; 15.9.3.3; 17.1.2)
+subroutine message_cpp_interface(message, msglen)
+  implicit none
+       integer, intent(in) :: msglen
+       character(len=1), intent(in) :: message(msglen)
+  interface
+     subroutine message_callback(message, msglen) bind(c,name="message_callback")
+       implicit none
+       integer, intent(in) :: msglen
+       character(len=1), intent(in) :: message(msglen)
+     end subroutine message_callback
+  end interface
+  call message_callback(message, msglen)
+end subroutine message_cpp_interface
+
+
 subroutine logmessage(wrtbuffer, nlines)
   ! Log the lines from `wrtbuffer` until an empty line
   implicit none 
   character(len=*), intent(in) :: wrtbuffer(:)
   integer, intent(in), optional :: nlines
-  integer i, nl
+  integer i, nl, sl
+
   nl = size(wrtbuffer)
   if (present(nlines)) nl = min(nlines, nl)
   do i=1,nl
-     if (wrtbuffer(i) .ne. ' ') then
-        write (*,*) 'DEBUG: log(',i,')='//trim(wrtbuffer(i))
-     else
-        exit
-     end if
+     sl = len_trim(wrtbuffer(i))
+     if (sl==0) exit
+     call message_cpp_interface(wrtbuffer(i), sl)
   end do
 end subroutine logmessage
 

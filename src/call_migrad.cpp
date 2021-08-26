@@ -77,6 +77,15 @@ void cpp_callback(double* f,
     // std::cout << "DEBUG: cpp_callback() is returning *f=" << *f << std::endl;
 }
 
+
+extern "C"
+void message_callback(const char* message, const int* msglen)
+{
+    std::string msg(message, *msglen);
+    Rcpp::Rcout << msg << "\n";
+}
+
+
 //' call_migrad
 //'
 //' Call migrad subroutine
