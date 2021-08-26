@@ -71,7 +71,7 @@ subroutine set_variables (nvars_total, x_labels, x_ini, is_fixed, x_est, x_min, 
   imcmc=0
   iboot=0
 
-  call debug_print_commons()
+  ! call debug_print_commons()
   
 end subroutine set_variables
 

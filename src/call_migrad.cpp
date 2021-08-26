@@ -2,49 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
-#include <iostream> // DEBUG
-
-static const double data1[] = {
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,5,5,5,5,
-    5,5,5,5,5,5,5,5,5,5,5,5,5,
-    5,5,5,5,5,5,5,5,5,5,5,5,5,
-    5,5,5,5,5,5,5,5,5,5,5,5,5,
-    5,5,5,5,5,5,5,10,10,10,10,10,10,
-    10,10,10,10,10,10,10,10,10,10,10,10,10,
-    10,10,10,10,10,10,10,10,10,10,10,10,10,
-    10,10,10,10,10,10,10,10,10,10,10,10,10,
-    10,10,10,10,10
-};
-
-static const double data2[] = {
-    23,23,15,22,21,13,20,19,22,25,
-    18,19,15, 21,20,19,19,18,21,25,
-    31,18,19,20,20,17,19,19,21,27,
-    30,17,14,24,21,22,22,13,23,15,
-    19,24,18,30,16,21,15,28,20,31,
-    38,38,32,22,31,38,26,42,32,26,
-    29,28,31,22,30,26,41,41,33,33,
-    39,35,13,31,30,28,18,23,33,27,
-    40,26,28,27,32,34,28,32,29,34,
-    23,32,26,29,21,32,31,31,41,26,
-    67,60,60,44,59,75,38,38,45,56,
-    46,57,55,62,55,56,73,52,50,57,
-    52,50,61,69,65,38,52,62,59,65,
-    68,68,64,54,64,54,52,71,59,46,
-    51,59,60,45,49,41,56,61,59,48,
-    68,71,60,78,68,63,75,73,57,70,
-    64,82,73,75,79,59,83,79,77,47,
-    66,60,89,64,90,67,78,72,65,81,
-    82,59,75,66,63,80,77,67,59,66,
-    80,66,74,71,69,85,70,70,66,63
-};
+// #include <iostream> // DEBUG
 
 
 extern "C" void ftn_set_variables (const int* nvars_total,
@@ -61,20 +19,72 @@ extern "C" void ftn_migrad(int* nvars,
                            double* y_final);
 
 
-extern "C"
-void cpp_callback(double* f,
-                  const int* /*iflag*/, const double u[], const int* npar)
-{
-    // std::cout << "DEBUG: cpp_callback() is called." << std::endl;
+using objective_fn_t = double(const std::vector<double>& u, int iflag);
+
+// Test function to be minimized
+double test_fn(const std::vector<double>& u, int /*iflag*/) {
+    static const double data1[] = {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,5,5,5,5,
+        5,5,5,5,5,5,5,5,5,5,5,5,5,
+        5,5,5,5,5,5,5,5,5,5,5,5,5,
+        5,5,5,5,5,5,5,5,5,5,5,5,5,
+        5,5,5,5,5,5,5,10,10,10,10,10,10,
+        10,10,10,10,10,10,10,10,10,10,10,10,10,
+        10,10,10,10,10,10,10,10,10,10,10,10,10,
+        10,10,10,10,10,10,10,10,10,10,10,10,10,
+        10,10,10,10,10
+    };
+
+    static const double data2[] = {
+        23,23,15,22,21,13,20,19,22,25,
+        18,19,15, 21,20,19,19,18,21,25,
+        31,18,19,20,20,17,19,19,21,27,
+        30,17,14,24,21,22,22,13,23,15,
+        19,24,18,30,16,21,15,28,20,31,
+        38,38,32,22,31,38,26,42,32,26,
+        29,28,31,22,30,26,41,41,33,33,
+        39,35,13,31,30,28,18,23,33,27,
+        40,26,28,27,32,34,28,32,29,34,
+        23,32,26,29,21,32,31,31,41,26,
+        67,60,60,44,59,75,38,38,45,56,
+        46,57,55,62,55,56,73,52,50,57,
+        52,50,61,69,65,38,52,62,59,65,
+        68,68,64,54,64,54,52,71,59,46,
+        51,59,60,45,49,41,56,61,59,48,
+        68,71,60,78,68,63,75,73,57,70,
+        64,82,73,75,79,59,83,79,77,47,
+        66,60,89,64,90,67,78,72,65,81,
+        82,59,75,66,63,80,77,67,59,66,
+        80,66,74,71,69,85,70,70,66,63
+    };
+    
     const auto sz = sizeof(data1)/sizeof(*data1);
     assert((sz==sizeof(data2)/sizeof(*data2)) && "Arrays must have the same size");
     Rcpp::NumericVector d1(data1, data1+sz);
     Rcpp::NumericVector d2(data2, data2+sz);
 
-    Rcpp::NumericVector uu(u, u + *npar);
+    Rcpp::NumericVector uu(u.begin(), u.end());
     Rcpp::NumericVector g = uu(0)*(1+d1*uu(1)*(1-uu(2)*d1));
-    *f = sum(g - d2*log(g));
-    // std::cout << "DEBUG: cpp_callback() is returning *f=" << *f << std::endl;
+    return sum(g - d2*log(g));
+}
+
+
+// FIXME!!!  This should be assigned when calling call_migrad()
+objective_fn_t* ObjectiveFn=test_fn ;   // FIXME: bare global --- hide it in a class or namespace
+                                        // Warning: the whole thing is not re-enterable because of the global!
+
+extern "C"
+void cpp_callback(double* f,
+                  const int* iflag, const double u[], const int* npar)
+{
+    *f = ObjectiveFn(std::vector<double>(u, u+*npar), *iflag);
 }
 
 
@@ -96,7 +106,7 @@ void message_callback(const char* message, const int* msglen)
 //' @export
 //[[Rcpp::export]]
 std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
-    int nvars = vars.nrow(); // fixme: use `auto` and check for MAX_INT
+    int nvars = vars.nrow(); // FIXME: use `auto` and check for MAX_INT
     if (vars.ncol()!=5) {
         throw std::runtime_error("Variable matrix should have 5 columns: "
                                  "is_fixed,initial,estimated,min,max");
@@ -121,17 +131,12 @@ std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
         std::copy(r_labels[i].begin(), r_labels[i].end(), &f_labels[i*10]);
     }
 
-    // std::cout << "DEBUG: calling ftn_set_variables()" << std::endl;
     ftn_set_variables(&nvars, f_labels.data(), x_ini.data(), is_fixed.data(), x_est.data(), x_min.data(), x_max.data());
 
 
     std::vector<double> yx_final(nvars+1);
-    
-    // std::cout << "DEBUG: calling ftn_migrad()" << std::endl;
     ftn_migrad(&nvars, yx_final.data()+1, &yx_final[0]);
-    
-    // std::cout << "DEBUG: back from migrad(), ymin=" << yx_final[0] <<  std::endl;
 
-    // std::cout << "DEBUG: back from cpp_callback()" << std::endl;
+    // FIXME!! Determine and return the convergence status!
     return yx_final;
 }
