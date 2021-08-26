@@ -391,7 +391,7 @@ C                                        . . . . .  END MAIN LOOP
       write(WRTBUFFER, 180)
       call logmessage(wrtbuffer)
   180 FORMAT ('COVARIANCE MATRIX INACCURATE.  BHAT WILL ',
-     1'TRY TO RECALCULATE')
+     1'TRY TO RECALCULATE',/)
 C      CALL HESSE
 C      CALL MPRINT(1,AMIN)
 C      WRITE(WRTBUFFER,*) 'DO YOU WANT COVARIANCEES? (Y/N)'
@@ -465,19 +465,19 @@ C        WRITE(WRTBUFFER,9009) STAMP,STATUS,AMIN
         ENDIF
       ENDDO
       
-        OPEN(23,file='bhat.final',status='unknown')
-
-C        WRITE(23,9009) STAMP,STATUS,AMIN
-        WRITE(23,9009) STATUS,AMIN
-        WRITE(23,9010)
-        IV1=IVN(1)
-        WRITE(23,9020) ITER,AMIN,LABELS(IV1),SU(IV1),GS(1),G2(1),NFCN
-      DO I=2,NPAR
-        IVI=IVN(I)
-        WRITE(23,9030) LABELS(IVI),SU(IVI),GS(I),G2(I)
-      ENDDO
-
-        CLOSE(23)
+c$$$        OPEN(23,file='bhat.final',status='unknown')
+c$$$
+c$$$C        WRITE(23,9009) STAMP,STATUS,AMIN
+c$$$        WRITE(23,9009) STATUS,AMIN
+c$$$        WRITE(23,9010)
+c$$$        IV1=IVN(1)
+c$$$        WRITE(23,9020) ITER,AMIN,LABELS(IV1),SU(IV1),GS(1),G2(1),NFCN
+c$$$      DO I=2,NPAR
+c$$$        IVI=IVN(I)
+c$$$        WRITE(23,9030) LABELS(IVI),SU(IVI),GS(I),G2(I)
+c$$$      ENDDO
+c$$$
+c$$$        CLOSE(23)
 
       IF(IBOOT.EQ.2) THEN
       WRITE(9,6000) AMIN,(SU(IVN(I)),I=1,NPAR)
