@@ -3,7 +3,6 @@
       IMPLICIT REAL*8 (A-H,O-Z)
 
       PARAMETER(NMAX=100,SENS=2.,XINF=32.)
-C     CHARACTER*28 STAMP,STATUS
       CHARACTER*28 STATUS
       CHARACTER*10 LABELS(NMAX)
       CHARACTER    RNF(NMAX)
@@ -294,11 +293,7 @@ C ---  COMPUTE FIRST AND SECOND (DIAGONAL) DERIVATIVES
 
 ! determine step sizes via DSTEP routine
       
-      IF(ISW2.EQ.0) THEN
-      CALL DQSTEP(NFCN,NDIM,NPAR,X,SENS,XINF,DSTEPS)
-      ELSE
-!      WRITE(WRTBUFFER,*) 'using V() for computation of D'
-      ENDIF
+      IF(ISW2.EQ.0) CALL DQSTEP(NFCN,NDIM,NPAR,X,SENS,XINF,DSTEPS)
 
       DO I= 1, NPAR
 
@@ -392,11 +387,6 @@ C                                        . . . . .  END MAIN LOOP
       call logmessage(wrtbuffer)
   180 FORMAT ('COVARIANCE MATRIX INACCURATE.  BHAT WILL ',
      1'TRY TO RECALCULATE',/)
-C      CALL HESSE
-C      CALL MPRINT(1,AMIN)
-C      WRITE(WRTBUFFER,*) 'DO YOU WANT COVARIANCEES? (Y/N)'
-C      READ (*,460) ICHAR
-C      IF(ICHAR.EQ.'Y') CALL MATOUT(0.0D0, 1)
 
       IF (ISW2 .GE. 2)  THEN
          ISW2 = 3
@@ -438,8 +428,6 @@ C      IF(ICHAR.EQ.'Y') CALL MATOUT(0.0D0, 1)
 
 c       GRADIENT SEARCH FINAL OUTPUT:
 
-C      CALL BTIME(STAMP)
-C        WRITE(WRTBUFFER,9009) STAMP,STATUS,AMIN
         WRITE(WRTBUFFER,9009) STATUS,AMIN
         call logmessage(wrtbuffer)
         WRITE(WRTBUFFER,9010)
@@ -465,20 +453,6 @@ C        WRITE(WRTBUFFER,9009) STAMP,STATUS,AMIN
         ENDIF
       ENDDO
       
-c$$$        OPEN(23,file='bhat.final',status='unknown')
-c$$$
-c$$$C        WRITE(23,9009) STAMP,STATUS,AMIN
-c$$$        WRITE(23,9009) STATUS,AMIN
-c$$$        WRITE(23,9010)
-c$$$        IV1=IVN(1)
-c$$$        WRITE(23,9020) ITER,AMIN,LABELS(IV1),SU(IV1),GS(1),G2(1),NFCN
-c$$$      DO I=2,NPAR
-c$$$        IVI=IVN(I)
-c$$$        WRITE(23,9030) LABELS(IVI),SU(IVI),GS(I),G2(I)
-c$$$      ENDDO
-c$$$
-c$$$        CLOSE(23)
-
       IF(IBOOT.EQ.2) THEN
       WRITE(9,6000) AMIN,(SU(IVN(I)),I=1,NPAR)
       RETURN	!GO BACK TO BOOTSTRAPLOOP
@@ -487,7 +461,6 @@ c$$$        CLOSE(23)
       
       RETURN
   450 FORMAT('START DAVIDON-FLETCHER-POWELL ALGORITHM',/)
-C  460 FORMAT(A1)
   470 FORMAT ('CONVERGENCE CRITERIA: ',
      +    ' --  ESTIMATED DISTANCE TO MINIMUM (EDM) .LT.',E9.2,/,
      +22X,' --                               OR EDM .LT.',E9.2,/,
@@ -497,17 +470,7 @@ C  460 FORMAT(A1)
   511 FORMAT ('GRADIENT SEARCH NONCONVERGENT - STOP',/)
   520 FORMAT ('COVARIANCE MATRIX IS NOT POSITIVE-DEFINITE',/)
   650 FORMAT ('GRADIENT SEARCH FAILS TO FIND IMPROVEMENT',/)
-C 5000  FORMAT(I6,30E18.8)
 6000  FORMAT(F15.5,30E18.8,/)
-C 7000  FORMAT(/,'DO YOU WANT GRAPHICAL INFORMATION (Y/N) ')
-C 7010  FORMAT(A10)
-C 8000  FORMAT('plot "tmp_" using 1:3 title "',a5,'" w l ',
-C     1 10(a17,i5,a8,a5,'"',a4))
-C 8001  FORMAT('"tmp_" using 1:',i5,' w l')
-C 8002  FORMAT('pause -1')
-C 8010  FORMAT(/,'GRAPHING  LABELS:   ',2A10)
-C 8020  FORMAT(i5,5x,a5)
-C 9009  FORMAT(/,'BHAT RUN: ',A28,T42,'STATUS: ',A15,T67,'VALUE:',E16.8)
 9009  FORMAT('BHAT RUN STATUS: ',A15,T67,'VALUE:',E16.8,/)
 9010  FORMAT('IT',T11,'VALUE',T18,'LBL',T26,
      & 'ESTIMATES',T41,
@@ -521,13 +484,3 @@ C 9009  FORMAT(/,'BHAT RUN: ',A28,T42,'STATUS: ',A15,T67,'VALUE:',E16.8)
       END
 
 
-c$$$      SUBROUTINE BTIME(STAMP)
-c$$$       CHARACTER*28 STAMP
-c$$$
-c$$$      IDUM=SYSTEM('date > bhat.stamp')
-c$$$      OPEN(20,file='bhat.stamp',status='unknown')
-c$$$      READ(20,202) STAMP
-c$$$ 202  FORMAT(A28)
-c$$$      CLOSE(20)
-c$$$
-c$$$      END SUBROUTINE BTIME
