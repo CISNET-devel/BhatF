@@ -6,7 +6,7 @@
 using namespace Rcpp;
 
 // call_migrad
-std::vector<double> call_migrad(const Rcpp::NumericMatrix vars);
+Rcpp::List call_migrad(const Rcpp::NumericMatrix vars);
 RcppExport SEXP _BhatF_call_migrad(SEXP varsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

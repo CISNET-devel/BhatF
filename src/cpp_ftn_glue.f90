@@ -99,12 +99,12 @@ subroutine func(u,npar,f)
 end subroutine func
 
 
-!!! ***STOPPED HERE!*** Calls migrad with transformed variables
-subroutine ftn_migrad(nvar, x_final, f_final)  bind(c,name="ftn_migrad")
+subroutine ftn_migrad(nvar, x_final, f_final, ncalls, istat)  bind(c,name="ftn_migrad")
   implicit none
   ! Arguments:
   integer, intent(inout) :: nvar ! in:how many variables allocated; out:how many variables valid (not more than allocated)
   double precision, intent(out) :: x_final(nvar), f_final
+  integer, intent(out) :: ncalls, istat
   ! Common blocks:
   integer, parameter :: nmax=100
   character*10 labels(nmax)
@@ -118,7 +118,6 @@ subroutine ftn_migrad(nvar, x_final, f_final)  bind(c,name="ftn_migrad")
   common /NPRODCTS/ ndim,npar,np,mp,np2,ndim2,npar2,nlm  
   common /IFLAGS/ iflag,imcmc,iboot,iseed,ierr
   ! Local vars:
-  integer nct
   double precision :: x0(nmax)
 
   ! parameter transformation
@@ -127,13 +126,14 @@ subroutine ftn_migrad(nvar, x_final, f_final)  bind(c,name="ftn_migrad")
   iflag = 1
   call func(su,ndim,f_final)
 
-  nct = 1
+  ncalls = 1
   iflag = 2 
-  call migrad(ndim, npar, nct, x0, f_final)
+  call migrad(ndim, npar, ncalls, x0, f_final, istat)
 
   call btrafo(ndim, x0, su)
   iflag = 3 ! FIXME: the original code is not consistent in this
   call func(su,ndim,f_final)
+  ncalls = ncalls+1
 
   if (nvar>ndim) nvar=ndim
   x_final(1:nvar) = su(1:nvar)

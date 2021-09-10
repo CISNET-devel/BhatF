@@ -16,7 +16,9 @@ extern "C" void ftn_set_variables (const int* nvars_total,
 
 extern "C" void ftn_migrad(int* nvars,
                            double x_final[],
-                           double* y_final);
+                           double* y_final,
+                           int* ncalls,
+                           int* status);
 
 
 using objective_fn_t = double(const std::vector<double>& u, int iflag);
@@ -105,7 +107,7 @@ void message_callback(const char* message, const int* msglen)
 //' @param vars Matrix of variables, 1 row/variable containing is_fixed,initial,estimated,min,max
 //' @export
 //[[Rcpp::export]]
-std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
+Rcpp::List call_migrad(const Rcpp::NumericMatrix vars) {
     int nvars = vars.nrow(); // FIXME: use `auto` and check for MAX_INT
     if (vars.ncol()!=5) {
         throw std::runtime_error("Variable matrix should have 5 columns: "
@@ -134,9 +136,16 @@ std::vector<double> call_migrad(const Rcpp::NumericMatrix vars) {
     ftn_set_variables(&nvars, f_labels.data(), x_ini.data(), is_fixed.data(), x_est.data(), x_min.data(), x_max.data());
 
 
-    std::vector<double> yx_final(nvars+1);
-    ftn_migrad(&nvars, yx_final.data()+1, &yx_final[0]);
+    std::vector<double> x_final(nvars);
+    double y_final {};
+    int status=-1;
+    int ncalls=0;
+    ftn_migrad(&nvars, x_final.data(), &y_final, &ncalls, &status);
 
-    // FIXME!! Determine and return the convergence status!
-    return yx_final;
+    using Rcpp::_;
+    return Rcpp::List::create(_("fmin")=y_final,
+                              _("est")=x_final,
+                              _("status")=status,
+                              _("nfcn")=ncalls,
+                              _("label")=r_labels);
 }

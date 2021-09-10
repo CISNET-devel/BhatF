@@ -1,4 +1,4 @@
-      SUBROUTINE  MIGRAD(NDIM,NPAR,NFCN,X,AMIN)
+      SUBROUTINE  MIGRAD(NDIM,NPAR,NFCN,X,AMIN,ISTAT)
 
       IMPLICIT REAL*8 (A-H,O-Z)
 
@@ -31,6 +31,8 @@ CC        REF. -- FLETCHER, COMP.J. 13,317 (1970)   "SWITCHING METHOD"
          integer, intent(in), optional :: nlines
          end subroutine logmessage
       end interface
+
+      ISTAT = -1
       
       CALL BTRAFO(NDIM,X,SU)
       CALL FUNC(SU,NDIM,AMIN); NFCN = NFCN + 1
@@ -374,12 +376,14 @@ C                                        . . . . .  END MAIN LOOP
       ISW2 = 3
       IF (MATGD .GT. 0)  THEN
          STATUS='converged'
+         ISTAT=0
          GO TO 435
       ENDIF
 
       NPARGD = NPAR*(NPAR+5)/2
       IF (NFCN-NPFN .GE. NPARGD)  THEN
          STATUS='converged'
+         ISTAT=0
          GO TO 435
       ENDIF
 
@@ -391,6 +395,7 @@ C                                        . . . . .  END MAIN LOOP
       IF (ISW2 .GE. 2)  THEN
          ISW2 = 3
          STATUS='not converged'
+         ISTAT=1
          GO TO 435
       ENDIF
 
@@ -416,12 +421,14 @@ C                                        . . . . .  END MAIN LOOP
 
       IF (ISW2 .LE. 1)  THEN    !EGL: non-convergence after retry
          STATUS='not converged'
+         ISTAT=1
          GO TO 435
       ENDIF
  
       write(WRTBUFFER, 511)
       call logmessage(wrtbuffer)
-         STATUS='not converged'
+      STATUS='not converged'
+      ISTAT=1
 
   435 CALL BTRAFO(NDIM,X,SU) 
       CALL FUNC(SU,NDIM,AMIN); NFCN=NFCN+1
@@ -454,8 +461,8 @@ c       GRADIENT SEARCH FINAL OUTPUT:
       ENDDO
       
       IF(IBOOT.EQ.2) THEN
-      WRITE(9,6000) AMIN,(SU(IVN(I)),I=1,NPAR)
-      RETURN	!GO BACK TO BOOTSTRAPLOOP
+         WRITE(9,6000) AMIN,(SU(IVN(I)),I=1,NPAR)
+         RETURN                 !GO BACK TO BOOTSTRAPLOOP
       ENDIF
 
       
