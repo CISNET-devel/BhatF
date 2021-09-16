@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <cassert>
 // #include <iostream> // DEBUG
 
@@ -21,7 +22,7 @@ extern "C" void ftn_migrad(int* nvars,
                            int* status);
 
 
-using objective_fn_t = double(const std::vector<double>& u, int iflag);
+using objective_fn_t = std::function<double(const std::vector<double>& u, int iflag)>;
 
 // Test function to be minimized
 double test_fn(const std::vector<double>& u, int /*iflag*/) {
@@ -79,7 +80,7 @@ double test_fn(const std::vector<double>& u, int /*iflag*/) {
 
 
 // FIXME!!!  This should be assigned when calling call_migrad()
-objective_fn_t* ObjectiveFn=test_fn ;   // FIXME: bare global --- hide it in a class or namespace
+objective_fn_t ObjectiveFn {test_fn} ;   // FIXME: bare global --- hide it in a class or namespace
                                         // Warning: the whole thing is not re-enterable because of the global!
 
 extern "C"
@@ -104,14 +105,23 @@ void message_callback(const char* message, const int* msglen)
 //'
 //' Call migrad subroutine
 //'
-//' @param vars Matrix of variables, 1 row/variable containing is_fixed,initial,estimated,min,max
+//' @param vars List with components:
+//' 'label' (character vector),
+//' 'est' (initial guess vector),
+//' 'low' (lower bounds vector),
+//' 'upp' (upper bounds vector)
+//' 'fixed' (optional, logicals vector, TRUE if variable to be held constant)
+//' @param fn R Function to be optimized
 //' @export
 //[[Rcpp::export]]
 Rcpp::List call_migrad(const Rcpp::List vars, Rcpp::Function fn) {
-    // it is not said anywhere that Rcpp::NumericVector is a continuous storage!
-    // so, we are copying the R vectors to C++ vectors
     using Rcpp::as;
     using Rcpp::NumericVector;
+    
+    ObjectiveFn = [fn](const std::vector<double>& x, int) { return as<double>(fn(x)); };
+    
+    // it is not said anywhere that Rcpp::NumericVector is a continuous storage!
+    // so, we are copying the R vectors to C++ vectors
     std::vector<double> x_est(as<NumericVector>(vars["est"]).cbegin(), as<NumericVector>(vars["est"]).cend());
     std::vector<double> x_ini(x_est);
     std::vector<double> x_min(as<NumericVector>(vars["low"]).cbegin(), as<NumericVector>(vars["low"]).cend());

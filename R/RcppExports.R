@@ -5,7 +5,13 @@
 #'
 #' Call migrad subroutine
 #'
-#' @param vars Matrix of variables, 1 row/variable containing is_fixed,initial,estimated,min,max
+#' @param vars List with components:
+#' 'label' (character vector),
+#' 'est' (initial guess vector),
+#' 'low' (lower bounds vector),
+#' 'upp' (upper bounds vector)
+#' 'fixed' (optional, logicals vector, TRUE if variable to be held constant)
+#' @param fn R Function to be optimized
 #' @export
 call_migrad <- function(vars, fn) {
     .Call(`_BhatF_call_migrad`, vars, fn)
