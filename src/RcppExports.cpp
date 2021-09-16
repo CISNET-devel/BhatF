@@ -6,19 +6,20 @@
 using namespace Rcpp;
 
 // call_migrad
-Rcpp::List call_migrad(const Rcpp::NumericMatrix vars);
-RcppExport SEXP _BhatF_call_migrad(SEXP varsSEXP) {
+Rcpp::List call_migrad(const Rcpp::List vars, Rcpp::Function fn);
+RcppExport SEXP _BhatF_call_migrad(SEXP varsSEXP, SEXP fnSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type vars(varsSEXP);
-    rcpp_result_gen = Rcpp::wrap(call_migrad(vars));
+    Rcpp::traits::input_parameter< const Rcpp::List >::type vars(varsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Function >::type fn(fnSEXP);
+    rcpp_result_gen = Rcpp::wrap(call_migrad(vars, fn));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BhatF_call_migrad", (DL_FUNC) &_BhatF_call_migrad, 1},
+    {"_BhatF_call_migrad", (DL_FUNC) &_BhatF_call_migrad, 2},
     {NULL, NULL, 0}
 };
 

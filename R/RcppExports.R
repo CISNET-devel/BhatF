@@ -7,7 +7,7 @@
 #'
 #' @param vars Matrix of variables, 1 row/variable containing is_fixed,initial,estimated,min,max
 #' @export
-call_migrad <- function(vars) {
-    .Call(`_BhatF_call_migrad`, vars)
+call_migrad <- function(vars, fn) {
+    .Call(`_BhatF_call_migrad`, vars, fn)
 }
 

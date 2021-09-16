@@ -107,27 +107,37 @@ void message_callback(const char* message, const int* msglen)
 //' @param vars Matrix of variables, 1 row/variable containing is_fixed,initial,estimated,min,max
 //' @export
 //[[Rcpp::export]]
-Rcpp::List call_migrad(const Rcpp::NumericMatrix vars) {
-    int nvars = vars.nrow(); // FIXME: use `auto` and check for MAX_INT
-    if (vars.ncol()!=5) {
-        throw std::runtime_error("Variable matrix should have 5 columns: "
-                                 "is_fixed,initial,estimated,min,max");
-    }
+Rcpp::List call_migrad(const Rcpp::List vars, Rcpp::Function fn) {
     // it is not said anywhere that Rcpp::NumericVector is a continuous storage!
-    // so, we are copying the column vectors to C++ vectors
-    std::vector<double> x_ini(vars.column(1).cbegin(), vars.column(1).cend());
-    std::vector<double> x_est(vars.column(2).cbegin(), vars.column(2).cend());
-    std::vector<double> x_min(vars.column(3).cbegin(), vars.column(3).cend());
-    std::vector<double> x_max(vars.column(4).cbegin(), vars.column(4).cend());
+    // so, we are copying the R vectors to C++ vectors
+    using Rcpp::as;
+    using Rcpp::NumericVector;
+    std::vector<double> x_est(as<NumericVector>(vars["est"]).cbegin(), as<NumericVector>(vars["est"]).cend());
+    std::vector<double> x_ini(x_est);
+    std::vector<double> x_min(as<NumericVector>(vars["low"]).cbegin(), as<NumericVector>(vars["low"]).cend());
+    std::vector<double> x_max(as<NumericVector>(vars["upp"]).cbegin(), as<NumericVector>(vars["upp"]).cend());
+    int nvars = x_est.size(); // FIXME: use `auto` and check for MAX_INT
+
+    if (x_min.size()!=static_cast<unsigned>(nvars) || x_max.size()!=static_cast<unsigned>(nvars)) {
+        throw std::runtime_error("Inconsistent number of values"); // FIXME: better error message
+    }
 
     std::vector<int> is_fixed(nvars);
-    std::transform(vars.column(0).cbegin(), vars.column(0).cend(),
-                   is_fixed.begin(),
-                   [](double x) { return x!=0; } );
-
+    if (vars.containsElementNamed("fixed")) {
+        Rcpp::LogicalVector r_is_fixed=vars["fixed"];
+        if (r_is_fixed.size()!=nvars) {
+            throw std::runtime_error("Inconsistent number of values defining fixed variables"); // FIXME: better error message
+        }
+        std::transform(r_is_fixed.cbegin(), r_is_fixed.cend(),
+                       is_fixed.begin(),
+                       [](int x) { return !!x; } );
+    }
     // const int npar = std::count(is_fixed.begin(), is_fixed.end(), 0);
 
-    Rcpp::CharacterVector r_labels = rownames(vars);
+    Rcpp::CharacterVector r_labels = vars["label"];
+    if (r_labels.size()!=nvars) {
+        throw std::runtime_error("Inconsistent number of variable labels"); // FIXME: better error message
+    }
     std::vector<char> f_labels(nvars*10, ' ');
     for (auto i=0; i<nvars; ++i) {
         std::copy(r_labels[i].begin(), r_labels[i].end(), &f_labels[i*10]);
