@@ -34,5 +34,20 @@ test_that("migrad with R function", {
     expect_equal(result$nfcn, 55)
 })
 
+test_that("migrad with R function, fixed vars", {
+    f = function(x) { (x[1]-1)^2 + (x[2]-2)^2 + x[3]^2 + 3 } # min=3 at (1,2,0); min=5.25 at (1, fixed(0.5), 0)
+    
+    x = list(label=c("x","y", "z"),
+             fixed=c(FALSE, TRUE, FALSE),
+             est=c(0.5, 0.5, 0.5),
+             low=c(-1,-1,-1),
+             upp=c(5,5,5))
 
+    result = call_migrad(x,f)
+    
+    expect_equal(result$fmin, 5.25)
+    expect_equal(result$est, c(1.0, 0.5, 0.0), tolerance=1e-5)
+    expect_equal(result$label, x$label)
+    expect_equal(result$status, 0)
+})
 

@@ -15,7 +15,7 @@ subroutine debug_print_commons()
   write (*,*) 'DEBUG: ndim=',ndim,'npar=',npar
   write (*,*) 'DEBUG: labels=',labels(1:ndim)
   write (*,*) 'DEBUG: rnf=',rnf(1:ndim)
-  write (*,*) 'DEBUG: ivn=',ivn(1:ndim)
+  write (*,*) 'DEBUG: ivn=',ivn(1:npar)
   write (*,*) 'DEBUG: su=',su(1:ndim)
   write (*,*) 'DEBUG: se=',se(1:ndim)
   write (*,*) 'DEBUG: s1=',s1(1:ndim)
@@ -53,8 +53,10 @@ subroutine set_variables (nvars_total, x_labels, x_ini, is_fixed, x_est, x_min, 
   where (is_fixed(:)==0) rnf(1:nvars_total) = 'R'
   j = 1
   do i=1,nvars_total
-     if (is_fixed(i)==0) ivn(j)=i
-     j = j+1
+     if (is_fixed(i)==0) then
+        ivn(j)=i
+        j = j+1
+     end if
   end do
 
   ndim = nvars_total

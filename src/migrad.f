@@ -441,7 +441,8 @@ c       GRADIENT SEARCH FINAL OUTPUT:
         call logmessage(wrtbuffer)
         J=1
         IF(IVN(J).EQ.1) THEN
-          WRITE(WRTBUFFER,9020) ITER,AMIN,LABELS(1),SU(1),GS(1),G2(1),NFCN
+          WRITE(WRTBUFFER,9020) ITER,AMIN,LABELS(1),SU(1),
+     $                          GS(1),G2(1),NFCN
           call logmessage(wrtbuffer)
           J=J+1
         ELSE
