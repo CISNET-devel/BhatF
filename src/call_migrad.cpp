@@ -101,9 +101,9 @@ void message_callback(const char* message, const int* msglen)
 }
 
 
-//' call_migrad
+//' dfp
 //'
-//' Call migrad subroutine
+//' Call Davidon-Fletcher-Powell optimization Fortran routine
 //'
 //' @param vars List with components:
 //' 'label' (character vector),
@@ -114,7 +114,7 @@ void message_callback(const char* message, const int* msglen)
 //' @param fn R Function to be optimized
 //' @export
 //[[Rcpp::export]]
-Rcpp::List call_migrad(const Rcpp::List vars, Rcpp::Function fn) {
+Rcpp::List dfp(const Rcpp::List vars, Rcpp::Function fn) {
     using Rcpp::as;
     using Rcpp::NumericVector;
     
