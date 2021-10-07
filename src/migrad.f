@@ -389,13 +389,15 @@ C                                        . . . . .  END MAIN LOOP
 
       write(WRTBUFFER, 180)
       call logmessage(wrtbuffer)
-  180 FORMAT ('COVARIANCE MATRIX INACCURATE.  BHAT WILL ',
-     1'TRY TO RECALCULATE',/)
+  180 FORMAT ('COVARIANCE MATRIX INACCURATE',/)
 
       IF (ISW2 .GE. 2)  THEN
          ISW2 = 3
-         STATUS='not converged'
-         ISTAT=1
+         !STATUS='not converged'
+         !ISTAT=1
+C     A.G.: According to the (newer?) DFP code in R, it is still success
+         STATUS='converged'
+         ISTAT=0
          GO TO 435
       ENDIF
 
