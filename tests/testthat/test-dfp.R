@@ -49,5 +49,6 @@ test_that("DFP with R function, fixed vars", {
     expect_equal(result$est, c(1.0, 0.5, 0.0), tolerance=1e-5)
     expect_equal(result$label, x$label)
     expect_equal(result$status, 0)
+    print(paste("Ncalls:", result$nfcn))
 })
 

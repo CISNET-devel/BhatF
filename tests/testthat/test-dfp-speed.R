@@ -40,4 +40,6 @@ test_that("DFP benchmark on R function", {
     expect_equal(result$est, bb[1:nvars], tolerance=1e-5)
     expect_equal(result$label, x$label)
     expect_equal(result$status, 0)
+    print(paste("Ncalls:", result$nfcn))
 })
+
