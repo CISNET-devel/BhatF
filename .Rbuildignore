@@ -3,5 +3,6 @@
 ^unneeded/
 ^src/README$
 ^src/LICENSE$
+^src/Makefile.orig$
 ^src/main.f$
 ^LICENSE\.md$
