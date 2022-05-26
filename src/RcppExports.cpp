@@ -6,13 +6,13 @@
 using namespace Rcpp;
 
 // dfp
-Rcpp::List dfp(const Rcpp::List vars, Rcpp::Function fn);
+Rcpp::List dfp(const Rcpp::List vars, Rcpp::RObject fn);
 RcppExport SEXP _BhatF_dfp(SEXP varsSEXP, SEXP fnSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List >::type vars(varsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Function >::type fn(fnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type fn(fnSEXP);
     rcpp_result_gen = Rcpp::wrap(dfp(vars, fn));
     return rcpp_result_gen;
 END_RCPP

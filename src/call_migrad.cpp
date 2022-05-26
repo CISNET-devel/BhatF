@@ -5,7 +5,10 @@
 #include <cassert>
 // #include <iostream> // DEBUG
 
+#include <BhatF_helper.hpp>
 
+
+/// Set Fortran globals (common-block variables) for the optimization problem
 extern "C" void ftn_set_variables (const int* nvars_total,
                                    const char x_labels[],
                                    const double x_ini[],
@@ -14,7 +17,7 @@ extern "C" void ftn_set_variables (const int* nvars_total,
                                    const double x_min[],
                                    const double x_max[]);
 
-
+/// Call Fortran migrad() function to solve the optimization problem
 extern "C" void ftn_migrad(int* nvars,
                            double x_final[],
                            double* y_final,
@@ -22,75 +25,36 @@ extern "C" void ftn_migrad(int* nvars,
                            int* status);
 
 
-using objective_fn_t = std::function<double(const std::vector<double>& u, int iflag)>;
+// FIXME:ToDo: Encapsulate "what should be called after what" in some class ctor?
 
-// Test function to be minimized
-double test_fn(const std::vector<double>& u, int /*iflag*/) {
-    static const double data1[] = {
-        0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,5,5,5,5,
-        5,5,5,5,5,5,5,5,5,5,5,5,5,
-        5,5,5,5,5,5,5,5,5,5,5,5,5,
-        5,5,5,5,5,5,5,5,5,5,5,5,5,
-        5,5,5,5,5,5,5,10,10,10,10,10,10,
-        10,10,10,10,10,10,10,10,10,10,10,10,10,
-        10,10,10,10,10,10,10,10,10,10,10,10,10,
-        10,10,10,10,10,10,10,10,10,10,10,10,10,
-        10,10,10,10,10
-    };
-
-    static const double data2[] = {
-        23,23,15,22,21,13,20,19,22,25,
-        18,19,15, 21,20,19,19,18,21,25,
-        31,18,19,20,20,17,19,19,21,27,
-        30,17,14,24,21,22,22,13,23,15,
-        19,24,18,30,16,21,15,28,20,31,
-        38,38,32,22,31,38,26,42,32,26,
-        29,28,31,22,30,26,41,41,33,33,
-        39,35,13,31,30,28,18,23,33,27,
-        40,26,28,27,32,34,28,32,29,34,
-        23,32,26,29,21,32,31,31,41,26,
-        67,60,60,44,59,75,38,38,45,56,
-        46,57,55,62,55,56,73,52,50,57,
-        52,50,61,69,65,38,52,62,59,65,
-        68,68,64,54,64,54,52,71,59,46,
-        51,59,60,45,49,41,56,61,59,48,
-        68,71,60,78,68,63,75,73,57,70,
-        64,82,73,75,79,59,83,79,77,47,
-        66,60,89,64,90,67,78,72,65,81,
-        82,59,75,66,63,80,77,67,59,66,
-        80,66,74,71,69,85,70,70,66,63
-    };
+namespace migrad_caller {
+    using namespace BhatF_caller;
     
-    const auto sz = sizeof(data1)/sizeof(*data1);
-    assert((sz==sizeof(data2)/sizeof(*data2)) && "Arrays must have the same size");
-    Rcpp::NumericVector d1(data1, data1+sz);
-    Rcpp::NumericVector d2(data2, data2+sz);
+    static inline double objective_fn_stub(const std::vector<double>&, int) {
+        // Rcpp::Rcerr << "The objective function is left uninitialized!\nAborting...";
+        Rcpp::Function r_stop("stop");
+        r_stop("The objective function is left uninitialized!\nStopping...");
+        return 0;
+    } 
 
-    Rcpp::NumericVector uu(u.begin(), u.end());
-    Rcpp::NumericVector g = uu(0)*(1+d1*uu(1)*(1-uu(2)*d1));
-    return sum(g - d2*log(g));
+    // FIXME!!!  This should be assigned prior to calling call_migrad()
+    //           ToDo: Encapsulate it in some class ctor to enforce?
+    // Warning: the optimization is not re-enterable because of this static object!
+    // Note: the optimization is not re-enterable anyway because of Fortran common blocks.
+    objective_fn_t ObjectiveFn {objective_fn_stub};
 }
 
-
-// FIXME!!!  This should be assigned when calling call_migrad()
-objective_fn_t ObjectiveFn {test_fn} ;   // FIXME: bare global --- hide it in a class or namespace
-                                        // Warning: the whole thing is not re-enterable because of the global!
-
+/// Called from Fortran when it needs to evaluate the objective function
 extern "C"
 void cpp_callback(double* f,
                   const int* iflag, const double u[], const int* npar)
 {
-    *f = ObjectiveFn(std::vector<double>(u, u+*npar), *iflag);
+    // ToDo: better to use a `span`
+    *f = migrad_caller::ObjectiveFn(std::vector<double>(u, u+*npar), *iflag);
 }
 
 
+/// Called from Fortran when it needs to print a message
 extern "C"
 void message_callback(const char* message, const int* msglen)
 {
@@ -111,14 +75,26 @@ void message_callback(const char* message, const int* msglen)
 //' 'low' (lower bounds vector),
 //' 'upp' (upper bounds vector)
 //' 'fixed' (optional, logicals vector, TRUE if variable to be held constant)
-//' @param fn R Function to be optimized
+//' @param fn R Function or a pointer to Rcpp function to be optimized
 //' @export
-//[[Rcpp::export]]
-Rcpp::List dfp(const Rcpp::List vars, Rcpp::Function fn) {
+// [[Rcpp::export]]
+Rcpp::List dfp(const Rcpp::List vars, Rcpp::RObject fn) {
     using Rcpp::as;
+    using Rcpp::is;
     using Rcpp::NumericVector;
-    
-    ObjectiveFn = [fn](const std::vector<double>& x, int) { return as<double>(fn(x)); };
+    using Rcpp::Function;
+
+    if (is<Function>(fn)) {
+        migrad_caller::ObjectiveFn = [fn](const std::vector<double>& x, int) { return as<double>(as<Function>(fn)(x)); };
+    }
+    else if (TYPEOF(fn)==EXTPTRSXP) {
+        migrad_caller::xptr_t xptr(fn);
+        migrad_caller::ObjectiveFn = *xptr;
+    } else {
+        throw std::runtime_error("The argument `fn` must be an R function"
+                                 " or a pointer to a native function");
+    }
+
     
     // it is not said anywhere that Rcpp::NumericVector is a continuous storage!
     // so, we are copying the R vectors to C++ vectors

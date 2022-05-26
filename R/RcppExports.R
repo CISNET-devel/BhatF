@@ -11,7 +11,7 @@
 #' 'low' (lower bounds vector),
 #' 'upp' (upper bounds vector)
 #' 'fixed' (optional, logicals vector, TRUE if variable to be held constant)
-#' @param fn R Function to be optimized
+#' @param fn R Function or a pointer to Rcpp function to be optimized
 #' @export
 dfp <- function(vars, fn) {
     .Call(`_BhatF_dfp`, vars, fn)
