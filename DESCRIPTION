@@ -2,11 +2,21 @@ Package: BhatF
 Title: R bindings to Bhat Fortran Code
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "Alexander",
+     c(person(given = "Alexander",
            family = "Gaenko",
-           role = c("aut", "cre"),
+           role = c("cre","com"),
            email = "galexv@umich.edu",
-           comment = structure("0000-0002-1901-0394", .Names = "ORCID"))
+           comment = structure("0000-0002-1901-0394", .Names = "ORCID")),
+       person(given = "Georg",
+           family = "Luebeck",
+           role = c("aut"),
+           email = "gluebeck@fhcrc.org",
+           comment = structure("0000-0002-4378-2829", .Names = "ORCID")),
+      person(given = "Rafael",
+           family = "Meza",
+           role = c("aut"),
+           email = "rmeza@umich.edu",
+           comment = structure("0000-0002-1076-5037", .Names = "ORCID")))
 Description: R bindings to the Bhat program written in Fortran
 License: GPL-3
 Encoding: UTF-8
